@@ -14,16 +14,9 @@ cache:
   - $(POSTGIS_EXE)
 shallow_clone: true
 install:
-  # Turn on prepared (distributed) transactions
-  - ps: (Get-Content 'C:\Program Files\PostgreSQL\9.5\data\postgresql.conf').replace('#max_prepared_transactions = 0', 'max_prepared_transactions = 10') | Set-Content 'C:\Program Files\PostgreSQL\9.5\data\postgresql.conf'
-  # Turn on SSL with a self-signed certificate
   - 'xcopy .build\server.crt "C:\Program Files\PostgreSQL\9.5\data" /y'
   - 'xcopy .build\server.key "C:\Program Files\PostgreSQL\9.5\data" /y'
-  - ps: (Get-Content 'C:\Program Files\PostgreSQL\9.5\data\postgresql.conf').replace('#ssl = off', 'ssl = on') | Set-Content 'C:\Program Files\PostgreSQL\9.5\data\postgresql.conf'
-  - powershell .build\postgis.ps1
-  # PostGIS
-  #- ps: (New-Object Net.WebClient).DownloadFile('http://download.osgeo.org/postgis/windows/pg95/postgis-bundle-pg95x64-setup-2.3.2-1.exe', 'c:\postgis.exe')
-  #- c:\postgis.exe /S /D="C:\Program Files\PostgreSQL\9.5"
+  - powershell .build\setup-pg.ps1
 services:
   - postgresql
 before_build:
