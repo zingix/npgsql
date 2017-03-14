@@ -14,8 +14,6 @@ cache:
   - $(POSTGIS_EXE)
 shallow_clone: true
 install:
-  - 'xcopy .build\server.crt "C:\Program Files\PostgreSQL\9.5\data" /y'
-  - 'xcopy .build\server.key "C:\Program Files\PostgreSQL\9.5\data" /y'
   - powershell .build\setup-pg.ps1
 services:
   - postgresql
