@@ -1743,6 +1743,8 @@ namespace Npgsql
                     break;
                 }
             }
+            if (!versionString.Contains('.'))
+                versionString += ".0";
             ServerVersion = new Version(versionString);
         }
 
