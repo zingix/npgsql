@@ -13,6 +13,10 @@ cache:
   - 'C:\projects\npgsql\packages -> **\*.csproj'  # For VSIX
   - $(POSTGIS_EXE)
 shallow_clone: true
+
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 install:
   - powershell .build\setup-pg.ps1
 services:
