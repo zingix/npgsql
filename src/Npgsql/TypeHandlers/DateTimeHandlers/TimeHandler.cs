@@ -26,13 +26,23 @@ using Npgsql.BackendMessages;
 using NpgsqlTypes;
 using System.Data;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.DateTimeHandlers
 {
+    [TypeMapping("time", NpgsqlDbType.Time, new[] { DbType.Time })]
+    class TimeHandlerFactory : TypeHandlerFactory
+    {
+        // Check for the legacy floating point timestamps feature
+        internal override TypeHandler Create(NpgsqlConnection conn)
+            => new TimeHandler(
+                conn.Connector.BackendParams.TryGetValue("integer_datetimes", out var s)
+                && s == "on");
+    }
+
     /// <remarks>
     /// http://www.postgresql.org/docs/current/static/datatype-datetime.html
     /// </remarks>
-    [TypeMapping("time", NpgsqlDbType.Time, new[] { DbType.Time })]
     class TimeHandler : SimpleTypeHandler<TimeSpan>
     {
         /// <summary>
@@ -41,17 +51,14 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
         /// </summary>
         readonly bool _integerFormat;
 
-        public TimeHandler(PostgresType postgresType, TypeHandlerRegistry registry)
-            : base(postgresType)
+        public TimeHandler(bool integerFormat)
         {
-            // Check for the legacy floating point timestamps feature, defaulting to integer timestamps
-            _integerFormat = !registry.Connector.BackendParams.TryGetValue("integer_datetimes", out var s) || s == "on";
+            _integerFormat = integerFormat;
         }
 
         public override TimeSpan Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
-            if (!_integerFormat)
-                throw new NotSupportedException("Old floating point representation for timestamps not supported");
+            CheckIntegerFormat();
 
             // PostgreSQL time resolution == 1 microsecond == 10 ticks
             return new TimeSpan(buf.ReadInt64() * 10);
@@ -59,6 +66,8 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
 
         public override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
         {
+            CheckIntegerFormat();
+
             var asString = value as string;
             if (asString != null)
             {
@@ -78,6 +87,12 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
                 value = parameter.ConvertedValue;
 
             buf.WriteInt64(((TimeSpan)value).Ticks / 10);
+        }
+
+        void CheckIntegerFormat()
+        {
+            if (!_integerFormat)
+                throw new NotSupportedException("Old floating point representation for timestamps not supported");
         }
     }
 }

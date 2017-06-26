@@ -36,7 +36,6 @@ namespace Npgsql.TypeHandlers
 {
     abstract class ArrayHandler : ChunkingTypeHandler<Array>
     {
-        internal ArrayHandler(PostgresType postgresType) : base(postgresType) {}
         internal abstract Type GetElementFieldType(FieldDescription fieldDescription = null);
         internal abstract Type GetElementPsvType(FieldDescription fieldDescription = null);
     }
@@ -75,14 +74,13 @@ namespace Npgsql.TypeHandlers
         /// </summary>
         protected internal TypeHandler ElementHandler { get; protected set; }
 
-        public ArrayHandler(PostgresType postgresType, [CanBeNull] TypeHandler elementHandler, int lowerBound) : base(postgresType)
+        public ArrayHandler([CanBeNull] TypeHandler elementHandler, int lowerBound)
         {
             LowerBound = lowerBound;
             ElementHandler = elementHandler;
         }
 
-        public ArrayHandler(PostgresType postgresType, [CanBeNull] TypeHandler elementHandler)
-            : this(postgresType, elementHandler, 1) {}
+        public ArrayHandler([CanBeNull] TypeHandler elementHandler) : this(elementHandler, 1) {}
 
         #region Read
 
@@ -288,7 +286,7 @@ namespace Npgsql.TypeHandlers
         internal override async ValueTask<object> ReadPsvAsObject(ReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => await Read<TPsv>(buf, async);
 
-        public ArrayHandlerWithPsv(PostgresType postgresType, TypeHandler elementHandler)
-            : base(postgresType, elementHandler) {}
+        public ArrayHandlerWithPsv(TypeHandler elementHandler)
+            : base(elementHandler) {}
     }
 }

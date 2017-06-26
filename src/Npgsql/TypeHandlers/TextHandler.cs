@@ -33,23 +33,30 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers
 {
-    [TypeMapping("text",      NpgsqlDbType.Text,
-      new[] { DbType.String, DbType.StringFixedLength, DbType.AnsiString, DbType.AnsiStringFixedLength },
-      new[] { typeof(string), typeof(char[]), typeof(char), typeof(ArraySegment<char>) },
-      DbType.String
+    [TypeMapping("text", NpgsqlDbType.Text,
+        new[] { DbType.String, DbType.StringFixedLength, DbType.AnsiString, DbType.AnsiStringFixedLength },
+        new[] { typeof(string), typeof(char[]), typeof(char), typeof(ArraySegment<char>) },
+        DbType.String
     )]
-    [TypeMapping("xml",       NpgsqlDbType.Xml, dbType: DbType.Xml)]
+    [TypeMapping("xml", NpgsqlDbType.Xml, dbType: DbType.Xml)]
 
-    [TypeMapping("varchar",   NpgsqlDbType.Varchar,            inferredDbType: DbType.String)]
-    [TypeMapping("bpchar",    NpgsqlDbType.Char,               inferredDbType: DbType.String)]
-    [TypeMapping("name",      NpgsqlDbType.Name,               inferredDbType: DbType.String)]
-    [TypeMapping("json",      NpgsqlDbType.Json,               inferredDbType: DbType.String)]
-    [TypeMapping("refcursor", NpgsqlDbType.Refcursor,          inferredDbType: DbType.String)]
-    [TypeMapping("citext",    NpgsqlDbType.Citext,             inferredDbType: DbType.String)]
+    [TypeMapping("varchar", NpgsqlDbType.Varchar, inferredDbType: DbType.String)]
+    [TypeMapping("bpchar", NpgsqlDbType.Char, inferredDbType: DbType.String)]
+    [TypeMapping("name", NpgsqlDbType.Name, inferredDbType: DbType.String)]
+    [TypeMapping("json", NpgsqlDbType.Json, inferredDbType: DbType.String)]
+    [TypeMapping("refcursor", NpgsqlDbType.Refcursor, inferredDbType: DbType.String)]
+    [TypeMapping("citext", NpgsqlDbType.Citext, inferredDbType: DbType.String)]
     [TypeMapping("unknown")]
+    class TextHandlerFactory : TypeHandlerFactory
+    {
+        internal override TypeHandler Create(NpgsqlConnection conn)
+            => new TextHandler(conn);
+    }
+
     class TextHandler : ChunkingTypeHandler<string>, IChunkingTypeHandler<char[]>, ITextReaderHandler
     {
         // Text types are handled a bit more efficiently when sent as text than as binary
@@ -64,9 +71,9 @@ namespace Npgsql.TypeHandlers
 
         #endregion
 
-        internal TextHandler(PostgresType postgresType, TypeHandlerRegistry registry) : base(postgresType)
+        internal TextHandler(NpgsqlConnection connection)
         {
-            _encoding = registry.Connector.TextEncoding;
+            _encoding = connection.Connector.TextEncoding;
         }
 
         #region Read

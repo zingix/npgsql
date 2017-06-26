@@ -30,6 +30,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql
@@ -66,6 +67,7 @@ namespace Npgsql
         [CanBeNull]
         internal LengthCache LengthCache { get; private set; }
 
+        [CanBeNull]
         internal TypeHandler Handler { get; private set; }
         internal FormatCode FormatCode { get; private set; }
 
@@ -400,7 +402,7 @@ namespace Npgsql
                 }
 
                 if (_value != null) {   // Infer from value
-                    return TypeHandlerRegistry.ToDbType(_value.GetType());
+                    return GlobalTypeMapper.Instance.ToDbType(_value.GetType());
                 }
 
                 return DbType.Object;
@@ -416,7 +418,7 @@ namespace Npgsql
                 else
                 {
                     _dbType = value;
-                    _npgsqlDbType = TypeHandlerRegistry.ToNpgsqlDbType(value);
+                    _npgsqlDbType = GlobalTypeMapper.Instance.ToNpgsqlDbType(value);
                 }
             }
         }
@@ -436,7 +438,7 @@ namespace Npgsql
                 }
 
                 if (_value != null) {   // Infer from value
-                    return TypeHandlerRegistry.ToNpgsqlDbType(_value);
+                    return GlobalTypeMapper.Instance.ToNpgsqlDbType(_value);
                 }
 
                 return NpgsqlDbType.Unknown;
@@ -450,7 +452,7 @@ namespace Npgsql
 
                 ClearBind();
                 _npgsqlDbType = value;
-                _dbType = TypeHandlerRegistry.ToDbType(value);
+                _dbType = GlobalTypeMapper.Instance.ToDbType(value);
             }
         }
 
@@ -582,7 +584,7 @@ namespace Npgsql
         /// </summary>
         internal bool IsTypeExplicitlySet => _npgsqlDbType.HasValue || _dbType.HasValue;
 
-        internal void ResolveHandler(TypeHandlerRegistry registry)
+        internal void ResolveHandler(ConnectorTypeMapper typeMapper)
         {
             if (Handler != null) {
                 return;
@@ -590,15 +592,15 @@ namespace Npgsql
 
             if (_npgsqlDbType.HasValue)
             {
-                Handler = registry[_npgsqlDbType.Value, SpecificType];
+                Handler = typeMapper[_npgsqlDbType.Value, SpecificType];
             }
             else if (_dbType.HasValue)
             {
-                Handler = registry[_dbType.Value];
+                Handler = typeMapper[_dbType.Value];
             }
             else if (_value != null)
             {
-                Handler = registry[_value];
+                Handler = typeMapper[_value];
             }
             else
             {
@@ -606,9 +608,9 @@ namespace Npgsql
             }
         }
 
-        internal void Bind(TypeHandlerRegistry registry)
+        internal void Bind(ConnectorTypeMapper typeMapper)
         {
-            ResolveHandler(registry);
+            ResolveHandler(typeMapper);
 
             Debug.Assert(Handler != null);
             FormatCode = Handler.PreferTextWrite ? FormatCode.Text : FormatCode.Binary;

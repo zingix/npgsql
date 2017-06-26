@@ -25,6 +25,7 @@ using System.Diagnostics;
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers.InternalTypesHandlers
@@ -32,8 +33,6 @@ namespace Npgsql.TypeHandlers.InternalTypesHandlers
     [TypeMapping("tid", NpgsqlDbType.Tid, typeof(NpgsqlTid))]
     class TidHandler : SimpleTypeHandler<NpgsqlTid>, ISimpleTypeHandler<string>
     {
-        internal TidHandler(PostgresType postgresType) : base(postgresType) { }
-
         public override NpgsqlTid Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
             Debug.Assert(len == 6);

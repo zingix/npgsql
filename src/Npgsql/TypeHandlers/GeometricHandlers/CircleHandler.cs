@@ -24,6 +24,7 @@
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers.GeometricHandlers
@@ -37,8 +38,6 @@ namespace Npgsql.TypeHandlers.GeometricHandlers
     [TypeMapping("circle", NpgsqlDbType.Circle, typeof(NpgsqlCircle))]
     class CircleHandler : SimpleTypeHandler<NpgsqlCircle>, ISimpleTypeHandler<string>
     {
-        internal CircleHandler(PostgresType postgresType) : base(postgresType) { }
-
         public override NpgsqlCircle Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => new NpgsqlCircle(buf.ReadDouble(), buf.ReadDouble(), buf.ReadDouble());
 

@@ -24,6 +24,7 @@
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers.GeometricHandlers
@@ -37,8 +38,6 @@ namespace Npgsql.TypeHandlers.GeometricHandlers
     [TypeMapping("line", NpgsqlDbType.Line, typeof(NpgsqlLine))]
     class LineHandler : SimpleTypeHandler<NpgsqlLine>, ISimpleTypeHandler<string>
     {
-        internal LineHandler(PostgresType postgresType) : base(postgresType) { }
-
         public override NpgsqlLine Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => new NpgsqlLine(buf.ReadDouble(), buf.ReadDouble(), buf.ReadDouble());
 

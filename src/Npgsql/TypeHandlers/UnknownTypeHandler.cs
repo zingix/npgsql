@@ -40,7 +40,13 @@ namespace Npgsql.TypeHandlers
     /// </summary>
     class UnknownTypeHandler : TextHandler
     {
-        internal UnknownTypeHandler(TypeHandlerRegistry registry) : base(UnknownBackendType.Instance, registry) {}
+        readonly NpgsqlConnector _connector;
+
+        internal UnknownTypeHandler(NpgsqlConnection connection) : base(connection)
+        {
+            _connector = connection.Connector;
+            PostgresType = UnknownBackendType.Instance;
+        }
 
         public override ValueTask<string> Read(ReadBuffer buf, int byteLen, bool async, FieldDescription fieldDescription = null)
         {
@@ -49,7 +55,12 @@ namespace Npgsql.TypeHandlers
 
             if (fieldDescription.IsBinaryFormat)
             {
+                // We can't do anything with a binary representation of an unknown type - the user should have
+                // requested text. Skip the data and throw.
                 buf.Skip(byteLen);
+                // At least get the name of the PostgreSQL type for the exception
+                if (_connector.TypeMapper.DatabaseInfo.ByOID.TryGetValue(fieldDescription.TypeOID, out var pgType))
+                    throw new SafeReadException(new NotSupportedException($"The field '{fieldDescription.Name}' has type '{pgType.DisplayName}', which is currently unknown to Npgsql. You can retrieve it as a string by marking it as unknown, please see the FAQ."));
                 throw new SafeReadException(new NotSupportedException($"The field '{fieldDescription.Name}' has a type currently unknown to Npgsql (OID {fieldDescription.TypeOID}). You can retrieve it as a string by marking it as unknown, please see the FAQ."));
             }
             return base.Read(buf, byteLen, async, fieldDescription);

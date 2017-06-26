@@ -29,11 +29,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers
 {
     [TypeMapping("hstore", NpgsqlDbType.Hstore, new[] { typeof(Dictionary<string, string>), typeof(IDictionary<string, string>) })]
+    class HstoreHandlerFactory : TypeHandlerFactory
+    {
+        internal override TypeHandler Create(NpgsqlConnection conn)
+            => new HstoreHandler(conn);
+    }
+
     class HstoreHandler : ChunkingTypeHandler<Dictionary<string, string>>,
         IChunkingTypeHandler<IDictionary<string, string>>, IChunkingTypeHandler<string>
     {
@@ -42,9 +49,9 @@ namespace Npgsql.TypeHandlers
         /// </summary>
         readonly TextHandler _textHandler;
 
-        internal HstoreHandler(PostgresType postgresType, TypeHandlerRegistry registry) : base(postgresType)
+        internal HstoreHandler(NpgsqlConnection connection)
         {
-            _textHandler = new TextHandler(postgresType, registry);
+            _textHandler = new TextHandler(connection);
         }
 
         #region Write

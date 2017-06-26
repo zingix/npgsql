@@ -21,25 +21,27 @@
 // TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #endregion
 
-using System;
-using System.Data;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using JetBrains.Annotations;
+using Npgsql.PostgresTypes;
 
-namespace Npgsql.PostgresTypes
+namespace Npgsql.TypeMapping
 {
     /// <summary>
-    /// Represents a PostgreSQL base data type, which is a simple scalar value.
+    /// Base class for all type handler factories, which construct type handlers that know how
+    /// to read and write CLR types from/to PostgreSQL types. Type handler factories are set up
+    /// via <see cref="NpgsqlTypeMapping"/> in either the global or connection-specific type mapper.
     /// </summary>
-    public class PostgresBaseType : PostgresType
+    /// <seealso cref="NpgsqlTypeMapping"/>
+    /// <seealso cref="NpgsqlConnection.GlobalTypeMapper"/>
+    /// <seealso cref="NpgsqlConnection.TypeMapper"/>
+    public abstract class TypeHandlerFactory
     {
-        /// <summary>
-        /// Constructs an unsupported base type (no handler exists in Npgsql for this type)
-        /// </summary>
-        protected internal PostgresBaseType(string ns, string name, uint oid)
-            : base(ns, name, oid)
-        {}
+        internal TypeHandler Create(PostgresType pgType, NpgsqlConnection conn)
+        {
+            var handler = Create(conn);
+            handler.PostgresType = pgType;
+            return handler;
+        }
+
+        internal abstract TypeHandler Create(NpgsqlConnection conn);
     }
 }

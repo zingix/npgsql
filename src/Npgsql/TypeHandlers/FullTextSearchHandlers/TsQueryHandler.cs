@@ -30,6 +30,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.FullTextSearchHandlers
 {
@@ -49,8 +50,6 @@ namespace Npgsql.TypeHandlers.FullTextSearchHandlers
         NpgsqlTsQuery _value;
 
         readonly Stack<NpgsqlTsQuery> _stack = new Stack<NpgsqlTsQuery>();
-
-        internal TsQueryHandler(PostgresType postgresType) : base(postgresType) { }
 
         public override async ValueTask<NpgsqlTsQuery> Read(ReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
         {

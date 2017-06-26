@@ -41,12 +41,7 @@ namespace Npgsql
 
     abstract class TypeHandler
     {
-        internal PostgresType PostgresType { get; }
-
-        internal TypeHandler(PostgresType postgresType)
-        {
-            PostgresType = postgresType;
-        }
+        internal PostgresType PostgresType { get; set; }
 
         internal abstract Type GetFieldType(FieldDescription fieldDescription = null);
         internal abstract Type GetProviderSpecificFieldType(FieldDescription fieldDescription = null);
@@ -144,8 +139,6 @@ namespace Npgsql
 
     abstract class TypeHandler<T> : TypeHandler
     {
-        internal TypeHandler(PostgresType postgresType) : base(postgresType) {}
-
         internal override Type GetFieldType(FieldDescription fieldDescription = null) => typeof(T);
         internal override Type GetProviderSpecificFieldType(FieldDescription fieldDescription = null) => typeof(T);
 
@@ -156,15 +149,14 @@ namespace Npgsql
             => Read<T>(buf, len, fieldDescription);
 
         internal override ArrayHandler CreateArrayHandler(PostgresType arrayBackendType)
-            => new ArrayHandler<T>(arrayBackendType, this);
+            => new ArrayHandler<T>(this) { PostgresType = arrayBackendType };
 
         internal override TypeHandler CreateRangeHandler(PostgresType rangeBackendType)
-            => new RangeHandler<T>(rangeBackendType, this);
+            => new RangeHandler<T>(this) { PostgresType = rangeBackendType };
     }
 
     abstract class SimpleTypeHandler<T> : TypeHandler<T>, ISimpleTypeHandler<T>
     {
-        internal SimpleTypeHandler(PostgresType postgresType) : base(postgresType) { }
         public abstract T Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null);
 
         internal sealed override async Task WriteWithLength(object value, WriteBuffer buf, LengthCache lengthCache, NpgsqlParameter parameter,
@@ -232,8 +224,6 @@ namespace Npgsql
     /// <typeparam name="TPsv">the type of the provider-specific value returned by this type handler</typeparam>
     abstract class SimpleTypeHandlerWithPsv<T, TPsv> : SimpleTypeHandler<T>, ISimpleTypeHandler<TPsv>
     {
-        internal SimpleTypeHandlerWithPsv(PostgresType postgresType) : base(postgresType) { }
-
         internal override Type GetProviderSpecificFieldType(FieldDescription fieldDescription = null)
             => typeof(TPsv);
 
@@ -258,13 +248,11 @@ namespace Npgsql
             => ReadPsv(buf, len, fieldDescription);
 
         internal override ArrayHandler CreateArrayHandler(PostgresType arrayBackendType)
-            => new ArrayHandlerWithPsv<T, TPsv>(arrayBackendType, this);
+            => new ArrayHandlerWithPsv<T, TPsv>(this) { PostgresType = arrayBackendType };
     }
 
     abstract class ChunkingTypeHandler<T> : TypeHandler<T>, IChunkingTypeHandler<T>
     {
-        internal ChunkingTypeHandler(PostgresType postgresType) : base(postgresType) { }
-
         public abstract ValueTask<T> Read(ReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null);
 
         /// <remarks>

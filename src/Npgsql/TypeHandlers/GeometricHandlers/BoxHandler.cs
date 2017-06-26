@@ -24,6 +24,7 @@
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers.GeometricHandlers
@@ -37,8 +38,6 @@ namespace Npgsql.TypeHandlers.GeometricHandlers
     [TypeMapping("box", NpgsqlDbType.Box, typeof(NpgsqlBox))]
     class BoxHandler : SimpleTypeHandler<NpgsqlBox>, ISimpleTypeHandler<string>
     {
-        internal BoxHandler(PostgresType postgresType) : base(postgresType) { }
-
         public override NpgsqlBox Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => new NpgsqlBox(
                 new NpgsqlPoint(buf.ReadDouble(), buf.ReadDouble()),

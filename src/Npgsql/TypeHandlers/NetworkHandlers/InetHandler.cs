@@ -28,6 +28,7 @@ using System.Net.Sockets;
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers.NetworkHandlers
@@ -42,8 +43,6 @@ namespace Npgsql.TypeHandlers.NetworkHandlers
         const byte IPv4 = 2;
         const byte IPv6 = 3;
         // ReSharper restore InconsistentNaming
-
-        internal InetHandler(PostgresType postgresType) : base(postgresType) { }
 
         public override IPAddress Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => ((ISimpleTypeHandler<NpgsqlInet>)this).Read(buf, len, fieldDescription).Address;

@@ -33,6 +33,7 @@ using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.FrontendMessages;
 using Npgsql.Logging;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql
@@ -50,7 +51,7 @@ namespace Npgsql
 
         NpgsqlConnector _connector;
         WriteBuffer _buf;
-        TypeHandlerRegistry _registry;
+        ConnectorTypeMapper _typeMapper;
         LengthCache _lengthCache;
         bool _isDisposed;
 
@@ -83,7 +84,7 @@ namespace Npgsql
         {
             _connector = connector;
             _buf = connector.WriteBuffer;
-            _registry = connector.TypeHandlerRegistry;
+            _typeMapper = connector.TypeMapper;
             _lengthCache = new LengthCache();
             _column = -1;
             _dummyParam = new NpgsqlParameter();
@@ -159,7 +160,7 @@ namespace Npgsql
 
             var handler = _typeHandlerCache[_column];
             if (handler == null)
-                handler = _typeHandlerCache[_column] = _registry[value];
+                handler = _typeHandlerCache[_column] = _typeMapper[value];
             DoWrite(handler, value);
         }
 
@@ -188,7 +189,7 @@ namespace Npgsql
 
             var handler = _typeHandlerCache[_column];
             if (handler == null)
-                handler = _typeHandlerCache[_column] = _registry[type];
+                handler = _typeHandlerCache[_column] = _typeMapper[type];
             DoWrite(handler, value);
         }
 
@@ -308,7 +309,7 @@ namespace Npgsql
             Log.Debug("COPY operation ended", _connector.Id);
             _connector.CurrentCopyOperation = null;
             _connector = null;
-            _registry = null;
+            _typeMapper = null;
             _buf = null;
             _isDisposed = true;
         }

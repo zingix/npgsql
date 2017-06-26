@@ -28,6 +28,7 @@ using NpgsqlTypes;
 using System.Data;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.NumericHandlers
 {
@@ -57,8 +58,6 @@ namespace Npgsql.TypeHandlers.NumericHandlers
             1000000000000000000000000M,
             10000000000000000000000000000M
         };
-
-        internal NumericHandler(PostgresType postgresType) : base(postgresType) { }
 
         public override decimal Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {

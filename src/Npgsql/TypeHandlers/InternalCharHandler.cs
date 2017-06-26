@@ -26,6 +26,7 @@ using Npgsql.BackendMessages;
 using NpgsqlTypes;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers
 {
@@ -39,8 +40,6 @@ namespace Npgsql.TypeHandlers
     class InternalCharHandler : SimpleTypeHandler<char>,
         ISimpleTypeHandler<byte>, ISimpleTypeHandler<short>, ISimpleTypeHandler<int>, ISimpleTypeHandler<long>
     {
-        internal InternalCharHandler(PostgresType postgresType) : base(postgresType) { }
-
         #region Read
 
         public override char Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)

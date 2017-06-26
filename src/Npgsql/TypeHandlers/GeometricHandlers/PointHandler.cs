@@ -24,6 +24,7 @@
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers.GeometricHandlers
@@ -37,8 +38,6 @@ namespace Npgsql.TypeHandlers.GeometricHandlers
     [TypeMapping("point", NpgsqlDbType.Point, typeof(NpgsqlPoint))]
     class PointHandler : SimpleTypeHandler<NpgsqlPoint>, ISimpleTypeHandler<string>
     {
-        internal PointHandler(PostgresType postgresType) : base(postgresType) { }
-
         public override NpgsqlPoint Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => new NpgsqlPoint(buf.ReadDouble(), buf.ReadDouble());
 

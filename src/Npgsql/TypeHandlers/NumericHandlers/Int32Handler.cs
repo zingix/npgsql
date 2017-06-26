@@ -27,6 +27,7 @@ using NpgsqlTypes;
 using System.Data;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.NumericHandlers
 {
@@ -39,8 +40,6 @@ namespace Npgsql.TypeHandlers.NumericHandlers
         ISimpleTypeHandler<float>, ISimpleTypeHandler<double>, ISimpleTypeHandler<decimal>,
         ISimpleTypeHandler<string>
     {
-        internal Int32Handler(PostgresType postgresType) : base(postgresType) { }
-
         public override int Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => buf.ReadInt32();
 

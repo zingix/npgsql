@@ -27,13 +27,20 @@ using NpgsqlTypes;
 using System.Data;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.DateTimeHandlers
 {
+    [TypeMapping("date", NpgsqlDbType.Date, DbType.Date, typeof(NpgsqlDate))]
+    class DateHandlerFactory : TypeHandlerFactory
+    {
+        internal override TypeHandler Create(NpgsqlConnection conn)
+            => new DateHandler(conn.Connector.ConvertInfinityDateTime);
+    }
+
     /// <remarks>
     /// http://www.postgresql.org/docs/current/static/datatype-datetime.html
     /// </remarks>
-    [TypeMapping("date", NpgsqlDbType.Date, DbType.Date, typeof(NpgsqlDate))]
     class DateHandler : SimpleTypeHandlerWithPsv<DateTime, NpgsqlDate>
     {
         internal const int PostgresEpochJdate = 2451545; // == date2j(2000, 1, 1)
@@ -45,10 +52,9 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
         /// </summary>
         readonly bool _convertInfinityDateTime;
 
-        public DateHandler(PostgresType postgresType, TypeHandlerRegistry registry)
-            : base(postgresType)
+        public DateHandler(bool convertInfinityDateTime)
         {
-            _convertInfinityDateTime = registry.Connector.ConvertInfinityDateTime;
+            _convertInfinityDateTime = convertInfinityDateTime;
         }
 
         public override DateTime Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)

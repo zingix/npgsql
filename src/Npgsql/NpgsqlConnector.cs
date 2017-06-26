@@ -40,6 +40,7 @@ using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.FrontendMessages;
 using Npgsql.Logging;
+using Npgsql.TypeMapping;
 
 namespace Npgsql
 {
@@ -108,7 +109,7 @@ namespace Npgsql
         /// </summary>
         internal int Id => BackendProcessId;
 
-        internal TypeHandlerRegistry TypeHandlerRegistry { get; set; }
+        internal ConnectorTypeMapper TypeMapper { get; set; }
 
         /// <summary>
         /// The current transaction status for this connector.
@@ -409,7 +410,8 @@ namespace Npgsql
 
                 State = ConnectorState.Ready;
 
-                await TypeHandlerRegistry.Setup(this, timeout, async);
+                await ConnectorTypeMapper.Bind(this, timeout, async);
+
                 if (Settings.Pooling && SupportsDiscard)
                     GenerateResetMessage();
                 Counters.HardConnectsPerSecond.Increment();
@@ -959,7 +961,7 @@ namespace Npgsql
                 case BackendMessageCode.RowDescription:
                     // TODO: Recycle
                     var rowDescriptionMessage = new RowDescriptionMessage();
-                    return rowDescriptionMessage.Load(buf, TypeHandlerRegistry);
+                    return rowDescriptionMessage.Load(buf, TypeMapper);
                 case BackendMessageCode.DataRow:
                     return _dataRowMessage.Load(len);
                 case BackendMessageCode.CompletedResponse:

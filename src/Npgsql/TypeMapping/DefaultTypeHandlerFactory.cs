@@ -22,24 +22,31 @@
 #endregion
 
 using System;
-using System.Data;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using JetBrains.Annotations;
+using System.Text;
+using System.Threading.Tasks;
+using Npgsql.PostgresTypes;
 
-namespace Npgsql.PostgresTypes
+namespace Npgsql.TypeMapping
 {
     /// <summary>
-    /// Represents a PostgreSQL base data type, which is a simple scalar value.
+    /// A type handler factory used to instantiate Npgsql's built-in type handlers.
     /// </summary>
-    public class PostgresBaseType : PostgresType
+    class DefaultTypeHandlerFactory : TypeHandlerFactory
     {
-        /// <summary>
-        /// Constructs an unsupported base type (no handler exists in Npgsql for this type)
-        /// </summary>
-        protected internal PostgresBaseType(string ns, string name, uint oid)
-            : base(ns, name, oid)
-        {}
+        readonly Type _handlerType;
+
+        internal DefaultTypeHandlerFactory(Type handlerType)
+        {
+            if (handlerType.IsAssignableFrom(typeof(TypeHandler)))
+                throw new ArgumentException("Must be a subclass of TypeHandler", nameof(handlerType));
+            _handlerType = handlerType;
+        }
+
+        internal override TypeHandler Create(NpgsqlConnection conn)
+            => (TypeHandler)Activator.CreateInstance(_handlerType);
     }
 }

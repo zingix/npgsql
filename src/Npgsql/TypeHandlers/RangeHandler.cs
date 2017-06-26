@@ -23,11 +23,9 @@
 
 using Npgsql.BackendMessages;
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using NpgsqlTypes;
-using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
 
 namespace Npgsql.TypeHandlers
@@ -47,8 +45,7 @@ namespace Npgsql.TypeHandlers
         /// </summary>
         public TypeHandler ElementHandler { get; }
 
-        public RangeHandler(PostgresType postgresType, TypeHandler<TElement> elementHandler)
-            : base(postgresType)
+        public RangeHandler(TypeHandler<TElement> elementHandler)
         {
             ElementHandler = elementHandler;
         }

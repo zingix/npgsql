@@ -27,17 +27,28 @@ using NpgsqlTypes;
 using System.Data;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.DateTimeHandlers
 {
+    [TypeMapping("timestamptz", NpgsqlDbType.TimestampTz, DbType.DateTimeOffset, typeof(DateTimeOffset))]
+    class TimestampTzHandlerFactory : TypeHandlerFactory
+    {
+        // Check for the legacy floating point timestamps feature
+        internal override TypeHandler Create(NpgsqlConnection conn)
+            => new TimestampTzHandler(
+                conn.Connector.BackendParams.TryGetValue("integer_datetimes", out var s)
+                && s == "on",
+                conn.Connector.ConvertInfinityDateTime);
+    }
+
     /// <remarks>
     /// http://www.postgresql.org/docs/current/static/datatype-datetime.html
     /// </remarks>
-    [TypeMapping("timestamptz", NpgsqlDbType.TimestampTz, DbType.DateTimeOffset, typeof(DateTimeOffset))]
     class TimestampTzHandler : TimestampHandler, ISimpleTypeHandler<DateTimeOffset>
     {
-        public TimestampTzHandler(PostgresType postgresType, TypeHandlerRegistry registry)
-            : base(postgresType, registry) {}
+        public TimestampTzHandler(bool integerFormat, bool convertInfinityDateTime)
+            : base(integerFormat, convertInfinityDateTime) {}
 
         public override DateTime Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {

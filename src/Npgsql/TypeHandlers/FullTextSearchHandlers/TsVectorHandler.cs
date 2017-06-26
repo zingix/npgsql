@@ -31,6 +31,7 @@ using JetBrains.Annotations;
 using NpgsqlTypes;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.FullTextSearchHandlers
 {
@@ -43,8 +44,6 @@ namespace Npgsql.TypeHandlers.FullTextSearchHandlers
         // 2561 = 2046 (max length lexeme string) + (1) null terminator +
         // 2 (num_pos) + sizeof(int16) * 256 (max_num_pos (positions/wegihts))
         const int MaxSingleLexemeBytes = 2561;
-
-        internal TsVectorHandler(PostgresType postgresType) : base(postgresType) { }
 
         public override async ValueTask<NpgsqlTsVector> Read(ReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
         {

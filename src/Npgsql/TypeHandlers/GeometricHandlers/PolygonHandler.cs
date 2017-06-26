@@ -25,6 +25,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers.GeometricHandlers
@@ -38,8 +39,6 @@ namespace Npgsql.TypeHandlers.GeometricHandlers
     [TypeMapping("polygon", NpgsqlDbType.Polygon, typeof(NpgsqlPolygon))]
     class PolygonHandler : ChunkingTypeHandler<NpgsqlPolygon>
     {
-        internal PolygonHandler(PostgresType postgresType) : base(postgresType) { }
-
         #region Read
 
         public override async ValueTask<NpgsqlPolygon> Read(ReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)

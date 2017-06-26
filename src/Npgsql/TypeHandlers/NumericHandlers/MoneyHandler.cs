@@ -26,6 +26,7 @@ using Npgsql.BackendMessages;
 using NpgsqlTypes;
 using System.Data;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.NumericHandlers
 {
@@ -35,8 +36,6 @@ namespace Npgsql.TypeHandlers.NumericHandlers
     [TypeMapping("money", NpgsqlDbType.Money, dbType: DbType.Currency)]
     class MoneyHandler : SimpleTypeHandler<decimal>
     {
-        internal MoneyHandler(PostgresType postgresType) : base(postgresType) { }
-
         public override decimal Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => buf.ReadInt64() / 100m;
 

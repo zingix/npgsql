@@ -26,13 +26,24 @@ using Npgsql.BackendMessages;
 using NpgsqlTypes;
 using System.Data;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers.DateTimeHandlers
 {
+    [TypeMapping("timestamp", NpgsqlDbType.Timestamp, new[] { DbType.DateTime, DbType.DateTime2 }, new[] { typeof(NpgsqlDateTime), typeof(DateTime) }, DbType.DateTime)]
+    class TimestampHandlerFactory : TypeHandlerFactory
+    {
+        // Check for the legacy floating point timestamps feature
+        internal override TypeHandler Create(NpgsqlConnection conn)
+            => new TimestampHandler(
+                conn.Connector.BackendParams.TryGetValue("integer_datetimes", out var s)
+                && s == "on",
+                conn.Connector.ConvertInfinityDateTime);
+    }
+
     /// <remarks>
     /// http://www.postgresql.org/docs/current/static/datatype-datetime.html
     /// </remarks>
-    [TypeMapping("timestamp", NpgsqlDbType.Timestamp, new[] { DbType.DateTime, DbType.DateTime2 }, new [] { typeof(NpgsqlDateTime), typeof(DateTime) }, DbType.DateTime)]
     class TimestampHandler : SimpleTypeHandlerWithPsv<DateTime, NpgsqlDateTime>
     {
         /// <summary>
@@ -47,12 +58,11 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
         /// </summary>
         protected readonly bool ConvertInfinityDateTime;
 
-        internal TimestampHandler(PostgresType postgresType, TypeHandlerRegistry registry)
-            : base(postgresType)
+        internal TimestampHandler(bool integerFormat, bool convertInfinityDateTime)
         {
             // Check for the legacy floating point timestamps feature, defaulting to integer timestamps
-            _integerFormat = !registry.Connector.BackendParams.TryGetValue("integer_datetimes", out var s) || s == "on";
-            ConvertInfinityDateTime = registry.Connector.ConvertInfinityDateTime;
+            _integerFormat = integerFormat;
+            ConvertInfinityDateTime = convertInfinityDateTime;
         }
 
         public override DateTime Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
@@ -80,9 +90,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
 
         protected NpgsqlDateTime ReadTimeStamp(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
-            if (!_integerFormat) {
-                throw new NotSupportedException("Old floating point representation for timestamps not supported");
-            }
+            CheckIntegerFormat();
 
             var value = buf.ReadInt64();
             if (value == long.MaxValue)
@@ -114,6 +122,8 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
 
         public override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
         {
+            CheckIntegerFormat();
+
             if (!(value is DateTime) && !(value is NpgsqlDateTime) && !(value is DateTimeOffset))
             {
                 var converted = Convert.ToDateTime(value);
@@ -184,6 +194,12 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
                 var uSecsDate = (730119 - ts.Date.DaysSinceEra) * 86400000000L;
                 buf.WriteInt64(-(uSecsDate - uSecsTime));
             }
+        }
+
+        void CheckIntegerFormat()
+        {
+            if (!_integerFormat)
+                throw new NotSupportedException("Old floating point representation for timestamps not supported");
         }
     }
 }

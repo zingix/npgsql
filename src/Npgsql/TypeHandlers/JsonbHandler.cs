@@ -23,19 +23,26 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers
 {
+    [TypeMapping("jsonb", NpgsqlDbType.Jsonb)]
+    class JsonbHandlerFactory : TypeHandlerFactory
+    {
+        internal override TypeHandler Create(NpgsqlConnection conn) => new JsonbHandler(conn);
+    }
+
     /// <summary>
     /// JSONB binary encoding is a simple UTF8 string, but prepended with a version number.
     /// </summary>
-    [TypeMapping("jsonb", NpgsqlDbType.Jsonb)]
     class JsonbHandler : TextHandler
     {
         /// <summary>
@@ -45,7 +52,7 @@ namespace Npgsql.TypeHandlers
 
         internal override bool PreferTextWrite => false;
 
-        internal JsonbHandler(PostgresType postgresType, TypeHandlerRegistry registry) : base(postgresType, registry) {}
+        internal JsonbHandler(NpgsqlConnection connection) : base(connection) { }
 
         #region Write
 

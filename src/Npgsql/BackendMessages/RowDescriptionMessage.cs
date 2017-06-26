@@ -27,6 +27,7 @@ using System.Globalization;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
 using Npgsql.TypeHandlers;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.BackendMessages
 {
@@ -49,7 +50,7 @@ namespace Npgsql.BackendMessages
             _caseInsensitiveNameIndex = new Dictionary<string, int>(KanaWidthCaseInsensitiveComparer.Instance);
         }
 
-        internal RowDescriptionMessage Load(ReadBuffer buf, TypeHandlerRegistry typeHandlerRegistry)
+        internal RowDescriptionMessage Load(ReadBuffer buf, ConnectorTypeMapper typeMapper)
         {
             Fields.Clear();
             _nameIndex.Clear();
@@ -61,7 +62,7 @@ namespace Npgsql.BackendMessages
                 // TODO: Recycle
                 var field = new FieldDescription();
                 field.Populate(
-                    typeHandlerRegistry,
+                    typeMapper,
                     buf.ReadNullTerminatedString(),  // Name
                     buf.ReadUInt32(),                // TableOID
                     buf.ReadInt16(),                 // ColumnAttributeNumber
@@ -151,11 +152,11 @@ namespace Npgsql.BackendMessages
     sealed class FieldDescription
     {
         internal void Populate(
-            TypeHandlerRegistry typeHandlerRegistry, string name, uint tableOID, short columnAttributeNumber,
+            ConnectorTypeMapper typeMapper, string name, uint tableOID, short columnAttributeNumber,
             uint oid, short typeSize, int typeModifier, FormatCode formatCode
         )
         {
-            _typeHandlerRegistry = typeHandlerRegistry;
+            _typeMapper = typeMapper;
             Name = name;
             TableOID = tableOID;
             ColumnAttributeNumber = columnAttributeNumber;
@@ -164,7 +165,7 @@ namespace Npgsql.BackendMessages
             TypeModifier = typeModifier;
             FormatCode = formatCode;
 
-            RealHandler = typeHandlerRegistry[TypeOID];
+            RealHandler = typeMapper[TypeOID];
             ResolveHandler();
         }
 
@@ -232,11 +233,11 @@ namespace Npgsql.BackendMessages
         void ResolveHandler()
         {
             Handler = IsBinaryFormat
-                ? _typeHandlerRegistry[TypeOID]
-                : _typeHandlerRegistry.UnrecognizedTypeHandler;
+                ? _typeMapper[TypeOID]
+                : _typeMapper.UnrecognizedTypeHandler;
         }
 
-        TypeHandlerRegistry _typeHandlerRegistry;
+        ConnectorTypeMapper _typeMapper;
 
         public bool IsBinaryFormat => FormatCode == FormatCode.Binary;
         public bool IsTextFormat => FormatCode == FormatCode.Text;

@@ -30,6 +30,7 @@ using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.Logging;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers
@@ -58,18 +59,9 @@ namespace Npgsql.TypeHandlers
         [CanBeNull]
         readonly ByteaHandler _byteaHandler;
 
-        static readonly NpgsqlLogger Log = NpgsqlLogManager.GetCurrentClassLogger();
-
-        internal PostgisGeometryHandler(PostgresType postgresType, TypeHandlerRegistry registry)
-            : base(postgresType)
+        public PostgisGeometryHandler()
         {
-            var byteaHandler = registry[NpgsqlDbType.Bytea];
-            if (_byteaHandler == registry.UnrecognizedTypeHandler)
-            {
-                Log.Warn("bytea type not present when setting up postgis geometry type. Writing as bytea will not work.");
-                return;
-            }
-            _byteaHandler = (ByteaHandler)byteaHandler;
+            _byteaHandler = new ByteaHandler();
         }
 
         #region Read

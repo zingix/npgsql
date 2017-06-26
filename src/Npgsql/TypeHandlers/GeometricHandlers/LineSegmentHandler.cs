@@ -24,6 +24,7 @@
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers.GeometricHandlers
@@ -37,8 +38,6 @@ namespace Npgsql.TypeHandlers.GeometricHandlers
     [TypeMapping("lseg", NpgsqlDbType.LSeg, typeof(NpgsqlLSeg))]
     class LineSegmentHandler : SimpleTypeHandler<NpgsqlLSeg>, ISimpleTypeHandler<string>
     {
-        internal LineSegmentHandler(PostgresType postgresType) : base(postgresType) { }
-
         public override NpgsqlLSeg Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => new NpgsqlLSeg(buf.ReadDouble(), buf.ReadDouble(), buf.ReadDouble(), buf.ReadDouble());
 

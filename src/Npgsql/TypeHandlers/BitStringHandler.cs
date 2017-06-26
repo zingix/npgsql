@@ -31,6 +31,7 @@ using Npgsql.BackendMessages;
 using NpgsqlTypes;
 using JetBrains.Annotations;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 
 namespace Npgsql.TypeHandlers
 {
@@ -47,8 +48,6 @@ namespace Npgsql.TypeHandlers
     class BitStringHandler : ChunkingTypeHandler<BitArray>,
         IChunkingTypeHandler<BitVector32>, IChunkingTypeHandler<bool>
     {
-        internal BitStringHandler(PostgresType postgresType) : base(postgresType) {}
-
         internal override Type GetFieldType(FieldDescription fieldDescription = null)
             => fieldDescription != null && fieldDescription.TypeModifier == 1 ? typeof(bool) : typeof(BitArray);
 
@@ -57,7 +56,7 @@ namespace Npgsql.TypeHandlers
 
         // BitString requires a special array handler which returns bool or BitArray
         internal override ArrayHandler CreateArrayHandler(PostgresType backendType) =>
-            new BitStringArrayHandler(backendType, this);
+            new BitStringArrayHandler(this) { PostgresType = backendType };
 
         #region Read
 
@@ -298,8 +297,8 @@ namespace Npgsql.TypeHandlers
         internal override Type GetElementPsvType(FieldDescription fieldDescription = null)
             => GetElementFieldType(fieldDescription);
 
-        public BitStringArrayHandler(PostgresType postgresType, BitStringHandler elementHandler)
-            : base(postgresType, elementHandler) {}
+        public BitStringArrayHandler(BitStringHandler elementHandler)
+            : base(elementHandler) {}
 
         public override ValueTask<Array> Read(ReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
             => fieldDescription?.TypeModifier == 1

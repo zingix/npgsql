@@ -31,6 +31,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Npgsql.BackendMessages;
 using Npgsql.PostgresTypes;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Npgsql.TypeHandlers
@@ -44,11 +45,6 @@ namespace Npgsql.TypeHandlers
         /// The CLR type mapped to the PostgreSQL composite type.
         /// </summary>
         Type CompositeType { get; }
-    }
-
-    interface ICompositeHandlerFactory
-    {
-        ICompositeHandler Create(PostgresType backendType, List<RawCompositeField> rawFields, TypeHandlerRegistry registry);
     }
 
     /// <summary>
@@ -66,25 +62,23 @@ namespace Npgsql.TypeHandlers
     /// <typeparam name="T">the CLR type to map to the PostgreSQL composite type </typeparam>
     class CompositeHandler<T> : ChunkingTypeHandler<T>, ICompositeHandler where T : new()
     {
-        readonly TypeHandlerRegistry _registry;
+        readonly ConnectorTypeMapper _typeMapper;
         readonly INpgsqlNameTranslator _nameTranslator;
-        List<RawCompositeField> _rawFields;
         [CanBeNull]
         List<MemberDescriptor> _members;
 
         public Type CompositeType => typeof(T);
 
-        internal CompositeHandler(PostgresType postgresType, INpgsqlNameTranslator nameTranslator, List<RawCompositeField> rawFields, TypeHandlerRegistry registry)
-            : base (postgresType)
+        internal CompositeHandler(INpgsqlNameTranslator nameTranslator, ConnectorTypeMapper typeMapper)
         {
             _nameTranslator = nameTranslator;
 
-            // At this point the composite handler nows about the fields, but hasn't yet resolved the
-            // type OIDs to their type handlers. This is done only very late upon first usage of the handler,
-            // allowing composite types to be registered and activated in any order regardless of dependencies.
-            _rawFields = rawFields;
+            // After construction the composite handler will have a reference to its PostgresCompositeType,
+            // which contains information about the fields. But the actual binding of their type OIDs
+            // to their type handlers is done only very late upon first usage of the handler,
+            // allowing composite types to be activated in any order regardless of dependencies.
 
-            _registry = registry;
+            _typeMapper = typeMapper;
         }
 
         #region Read
@@ -182,10 +176,13 @@ namespace Npgsql.TypeHandlers
             if (_members != null)
                 return;
 
-            _members = new List<MemberDescriptor>(_rawFields.Count);
-            foreach (var rawField in _rawFields)
+            Debug.Assert(PostgresType is PostgresCompositeType, "CompositeHandler initialized with a non-composite type");
+            var rawFields = ((PostgresCompositeType)PostgresType).Fields;
+
+            _members = new List<MemberDescriptor>(rawFields.Count);
+            foreach (var rawField in rawFields)
             {
-                if (!_registry.TryGetByOID(rawField.TypeOID, out var handler))
+                if (!_typeMapper.TryGetByOID(rawField.TypeOID, out var handler))
                     throw new Exception($"PostgreSQL composite type {PgDisplayName}, mapped to CLR type {typeof(T).Name}, has field {rawField.PgName} with an unknown type (TypeOID={rawField.TypeOID})");
 
                 var member = (
@@ -216,7 +213,7 @@ namespace Npgsql.TypeHandlers
                 throw new Exception($"PostgreSQL composite type {PgDisplayName} contains field {rawField.PgName} which cannot map to CLR type {typeof(T).Name}'s field {member.Name} of type {member.GetType().Name}");
             }
 
-            _rawFields = null;
+            rawFields = null;
         }
 
         struct MemberDescriptor
@@ -270,26 +267,22 @@ namespace Npgsql.TypeHandlers
         }
 
         #endregion
-
-        internal class Factory : ICompositeHandlerFactory
-        {
-            readonly INpgsqlNameTranslator _nameTranslator;
-
-            internal Factory(INpgsqlNameTranslator nameTranslator)
-            {
-                _nameTranslator = nameTranslator;
-            }
-
-            public ICompositeHandler Create(PostgresType backendType, List<RawCompositeField> rawFields, TypeHandlerRegistry registry)
-                => new CompositeHandler<T>(backendType, _nameTranslator, rawFields, registry);
-        }
     }
 
-    struct RawCompositeField
-    {
-        internal string PgName;
-        internal uint TypeOID;
+    interface ICompositeTypeHandlerFactory {}
 
-        public override string ToString() => $"{PgName} => {TypeOID}";
+    class CompositeTypeHandlerFactory<T> : TypeHandlerFactory, ICompositeTypeHandlerFactory
+        where T : new()
+    {
+        readonly INpgsqlNameTranslator _nameTranslator;
+
+        internal CompositeTypeHandlerFactory(INpgsqlNameTranslator nameTranslator)
+        {
+            _nameTranslator = nameTranslator;
+        }
+
+        internal override TypeHandler Create(NpgsqlConnection conn)
+            => new CompositeHandler<T>(_nameTranslator, conn.Connector.TypeMapper);
+
     }
 }
