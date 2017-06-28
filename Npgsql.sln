@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSIX", "src\VSIX\VSIX.cspro
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.NodaTime", "src\Npgsql.NodaTime\Npgsql.NodaTime.csproj", "{3FC173FB-E95E-4FCA-BAF8-2ED03CD043FF}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Json.NET", "src\Npgsql.Json.NET\Npgsql.Json.NET.csproj", "{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,14 @@ Global
 		{3FC173FB-E95E-4FCA-BAF8-2ED03CD043FF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3FC173FB-E95E-4FCA-BAF8-2ED03CD043FF}.Release|x86.ActiveCfg = Release|Any CPU
 		{3FC173FB-E95E-4FCA-BAF8-2ED03CD043FF}.Release|x86.Build.0 = Release|Any CPU
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}.Debug|x86.Build.0 = Debug|Any CPU
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}.Release|x86.ActiveCfg = Release|Any CPU
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,6 +102,7 @@ Global
 		{8B4AE9B6-CDAC-44DD-A5CD-28A470D363B8} = {ED612DB1-AB32-4603-95E7-891BACA71C39}
 		{ECFD8615-DEAD-4498-B262-85A4D0230229} = {8537E50E-CF7F-49CB-B4EF-3E2A1B11F050}
 		{3FC173FB-E95E-4FCA-BAF8-2ED03CD043FF} = {8537E50E-CF7F-49CB-B4EF-3E2A1B11F050}
+		{FDFF4FB8-BB4F-41FE-8952-F3AB8433A801} = {8537E50E-CF7F-49CB-B4EF-3E2A1B11F050}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8EFE3F29-EA58-476C-9794-59459CA1DB91}
