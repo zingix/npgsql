@@ -60,7 +60,7 @@ namespace Npgsql.TypeHandlers
     /// * The column data encoded as binary
     /// </remarks>
     /// <typeparam name="T">the CLR type to map to the PostgreSQL composite type </typeparam>
-    class CompositeHandler<T> : ChunkingTypeHandler<T>, ICompositeHandler where T : new()
+    class CompositeHandler<T> : TypeHandler<T>, ICompositeHandler where T : new()
     {
         readonly ConnectorTypeMapper _typeMapper;
         readonly INpgsqlNameTranslator _nameTranslator;

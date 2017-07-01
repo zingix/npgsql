@@ -45,8 +45,8 @@ namespace Npgsql.TypeHandlers
     /// </remarks>
     [TypeMapping("varbit", NpgsqlDbType.Varbit, new[] { typeof(BitArray), typeof(BitVector32) })]
     [TypeMapping("bit", NpgsqlDbType.Bit)]
-    class BitStringHandler : ChunkingTypeHandler<BitArray>,
-        IChunkingTypeHandler<BitVector32>, IChunkingTypeHandler<bool>
+    class BitStringHandler : TypeHandler<BitArray>,
+        ITypeHandler<BitVector32>, ITypeHandler<bool>
     {
         internal override Type GetFieldType(FieldDescription fieldDescription = null)
             => fieldDescription != null && fieldDescription.TypeModifier == 1 ? typeof(bool) : typeof(BitArray);
@@ -97,7 +97,7 @@ namespace Npgsql.TypeHandlers
             return result;
         }
 
-        async ValueTask<BitVector32> IChunkingTypeHandler<BitVector32>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<BitVector32> ITypeHandler<BitVector32>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
         {
             if (len > 4 + 4)
             {
@@ -113,7 +113,7 @@ namespace Npgsql.TypeHandlers
                 : new BitVector32(buf.ReadInt32());
         }
 
-        async ValueTask<bool> IChunkingTypeHandler<bool>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<bool> ITypeHandler<bool>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
         {
             await buf.Ensure(5, async);
             var bitLen = buf.ReadInt32();

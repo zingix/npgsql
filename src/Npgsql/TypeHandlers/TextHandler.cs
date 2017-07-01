@@ -57,7 +57,7 @@ namespace Npgsql.TypeHandlers
             => new TextHandler(conn);
     }
 
-    public class TextHandler : ChunkingTypeHandler<string>, IChunkingTypeHandler<char[]>, ITextReaderHandler
+    public class TextHandler : TypeHandler<string>, ITypeHandler<char[]>, ITextReaderHandler
     {
         // Text types are handled a bit more efficiently when sent as text than as binary
         // see https://github.com/npgsql/npgsql/issues/1210#issuecomment-235641670
@@ -118,7 +118,7 @@ namespace Npgsql.TypeHandlers
             return buf.TextEncoding.GetString(tempBuf);
         }
 
-        async ValueTask<char[]> IChunkingTypeHandler<char[]>.Read(NpgsqlReadBuffer buf, int byteLen, bool async, FieldDescription fieldDescription)
+        async ValueTask<char[]> ITypeHandler<char[]>.Read(NpgsqlReadBuffer buf, int byteLen, bool async, FieldDescription fieldDescription)
         {
             if (byteLen <= buf.Size)
             {

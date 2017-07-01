@@ -39,7 +39,7 @@ namespace Npgsql.TypeHandlers.FullTextSearchHandlers
     /// http://www.postgresql.org/docs/current/static/datatype-textsearch.html
     /// </summary>
     [TypeMapping("tsvector", NpgsqlDbType.TsVector, typeof(NpgsqlTsVector))]
-    class TsVectorHandler : ChunkingTypeHandler<NpgsqlTsVector>
+    class TsVectorHandler : TypeHandler<NpgsqlTsVector>
     {
         // 2561 = 2046 (max length lexeme string) + (1) null terminator +
         // 2 (num_pos) + sizeof(int16) * 256 (max_num_pos (positions/wegihts))

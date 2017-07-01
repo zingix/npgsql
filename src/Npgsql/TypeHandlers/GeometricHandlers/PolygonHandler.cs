@@ -37,7 +37,7 @@ namespace Npgsql.TypeHandlers.GeometricHandlers
     /// http://www.postgresql.org/docs/current/static/datatype-geometric.html
     /// </remarks>
     [TypeMapping("polygon", NpgsqlDbType.Polygon, typeof(NpgsqlPolygon))]
-    class PolygonHandler : ChunkingTypeHandler<NpgsqlPolygon>
+    class PolygonHandler : TypeHandler<NpgsqlPolygon>
     {
         #region Read
 

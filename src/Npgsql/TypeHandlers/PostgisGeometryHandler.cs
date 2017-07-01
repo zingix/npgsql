@@ -49,12 +49,12 @@ namespace Npgsql.TypeHandlers
         typeof(PostgisMultiPolygon),
         typeof(PostgisGeometryCollection),
     })]
-    class PostgisGeometryHandler : ChunkingTypeHandler<PostgisGeometry>,
-        IChunkingTypeHandler<PostgisPoint>, IChunkingTypeHandler<PostgisMultiPoint>,
-        IChunkingTypeHandler<PostgisLineString>, IChunkingTypeHandler<PostgisMultiLineString>,
-        IChunkingTypeHandler<PostgisPolygon>, IChunkingTypeHandler<PostgisMultiPolygon>,
-        IChunkingTypeHandler<PostgisGeometryCollection>,
-        IChunkingTypeHandler<byte[]>
+    class PostgisGeometryHandler : TypeHandler<PostgisGeometry>,
+        ITypeHandler<PostgisPoint>, ITypeHandler<PostgisMultiPoint>,
+        ITypeHandler<PostgisLineString>, ITypeHandler<PostgisMultiLineString>,
+        ITypeHandler<PostgisPolygon>, ITypeHandler<PostgisMultiPolygon>,
+        ITypeHandler<PostgisGeometryCollection>,
+        ITypeHandler<byte[]>
     {
         [CanBeNull]
         readonly ByteaHandler _byteaHandler;
@@ -199,7 +199,7 @@ namespace Npgsql.TypeHandlers
             }
         }
 
-        ValueTask<byte[]> IChunkingTypeHandler<byte[]>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        ValueTask<byte[]> ITypeHandler<byte[]>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
         {
             Debug.Assert(_byteaHandler != null);
             return _byteaHandler.Read(buf, len, async, fieldDescription);
@@ -209,19 +209,19 @@ namespace Npgsql.TypeHandlers
 
         #region Read concrete types
 
-        async ValueTask<PostgisPoint> IChunkingTypeHandler<PostgisPoint>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<PostgisPoint> ITypeHandler<PostgisPoint>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => (PostgisPoint)await Read(buf, len, async, fieldDescription);
-        async ValueTask<PostgisMultiPoint> IChunkingTypeHandler<PostgisMultiPoint>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<PostgisMultiPoint> ITypeHandler<PostgisMultiPoint>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => (PostgisMultiPoint)await Read(buf, len, async, fieldDescription);
-        async ValueTask<PostgisLineString> IChunkingTypeHandler<PostgisLineString>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<PostgisLineString> ITypeHandler<PostgisLineString>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => (PostgisLineString)await Read(buf, len, async, fieldDescription);
-        async ValueTask<PostgisMultiLineString> IChunkingTypeHandler<PostgisMultiLineString>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<PostgisMultiLineString> ITypeHandler<PostgisMultiLineString>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => (PostgisMultiLineString)await Read(buf, len, async, fieldDescription);
-        async ValueTask<PostgisPolygon> IChunkingTypeHandler<PostgisPolygon>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<PostgisPolygon> ITypeHandler<PostgisPolygon>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => (PostgisPolygon)await Read(buf, len, async, fieldDescription);
-        async ValueTask<PostgisMultiPolygon> IChunkingTypeHandler<PostgisMultiPolygon>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<PostgisMultiPolygon> ITypeHandler<PostgisMultiPolygon>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => (PostgisMultiPolygon)await Read(buf, len, async, fieldDescription);
-        async ValueTask<PostgisGeometryCollection> IChunkingTypeHandler<PostgisGeometryCollection>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<PostgisGeometryCollection> ITypeHandler<PostgisGeometryCollection>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => (PostgisGeometryCollection)await Read(buf, len, async, fieldDescription);
 
         #endregion

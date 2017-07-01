@@ -34,7 +34,7 @@ using Npgsql.PostgresTypes;
 
 namespace Npgsql.TypeHandlers
 {
-    abstract class ArrayHandler : ChunkingTypeHandler<Array>
+    abstract class ArrayHandler : TypeHandler<Array>
     {
         internal abstract Type GetElementFieldType(FieldDescription fieldDescription = null);
         internal abstract Type GetElementPsvType(FieldDescription fieldDescription = null);
@@ -83,6 +83,33 @@ namespace Npgsql.TypeHandlers
         public ArrayHandler([CanBeNull] TypeHandler elementHandler) : this(elementHandler, 1) {}
 
         #region Read
+
+        // Note that unlike most type handlers, we have to override Read<T2> and not Read, since we
+        // must do array-specific checking etc.
+        protected internal override async ValueTask<TArray> Read<TArray>(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
+        {
+            // TODO: Throw SafeReadExceptions
+            var t = typeof(TArray);
+            if (!t.IsArray)
+                throw new InvalidCastException($"Can't cast database type {PgDisplayName} to {typeof(TArray).Name}");
+
+            // Getting an array
+
+            // We need to treat this as an actual array type, these need special treatment because of
+            // typing/generics reasons (there is no way to express "array of X" with generics
+            var elementType = t.GetElementType();
+            if (elementType == GetElementFieldType())
+                return (TArray)await ReadAsObject(buf, len, async, fieldDescription);
+            if (elementType == GetElementPsvType())
+                return (TArray)await ReadPsvAsObject(buf, len, async, fieldDescription);
+            throw new InvalidCastException($"Can't cast database type {PgDisplayName} to {typeof(TArray).Name}");
+        }
+
+        internal override object ReadAsObject(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription)
+            => ReadAsObject(buf, len, false, fieldDescription).Result;
+
+        internal override async ValueTask<object> ReadAsObject(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+            => await Read<TElement>(buf, async);
 
         public override ValueTask<Array> Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
             => Read<TElement>(buf, async);
@@ -267,22 +294,22 @@ namespace Npgsql.TypeHandlers
     /// <remarks>
     /// http://www.postgresql.org/docs/current/static/arrays.html
     /// </remarks>
-    /// <typeparam name="TNormal">The .NET type contained as an element within this array</typeparam>
-    /// <typeparam name="TPsv">The .NET provider-specific type contained as an element within this array</typeparam>
-    class ArrayHandlerWithPsv<TNormal, TPsv> : ArrayHandler<TNormal>
+    /// <typeparam name="TElement">The .NET type contained as an element within this array</typeparam>
+    /// <typeparam name="TElementPsv">The .NET provider-specific type contained as an element within this array</typeparam>
+    class ArrayHandlerWithPsv<TElement, TElementPsv> : ArrayHandler<TElement>
     {
         /// <summary>
         /// The provider-specific type of the elements contained within this array,
         /// </summary>
         /// <param name="fieldDescription"></param>
         internal override Type GetElementPsvType(FieldDescription fieldDescription)
-            => typeof(TPsv);
+            => typeof(TElementPsv);
 
         internal override object ReadPsvAsObject(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription)
             => ReadPsvAsObject(buf, len, false, fieldDescription).Result;
 
         internal override async ValueTask<object> ReadPsvAsObject(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
-            => await Read<TPsv>(buf, async);
+            => await Read<TElementPsv>(buf, async);
 
         public ArrayHandlerWithPsv(TypeHandler elementHandler)
             : base(elementHandler) {}

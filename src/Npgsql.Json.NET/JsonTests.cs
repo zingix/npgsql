@@ -116,24 +116,23 @@ namespace Npgsql.Json.NET
         [Test]
         public void RoundtripClrArray()
         {
-            throw new NotImplementedException();
-            /*
             var expected = new[] { 1, 2, 3 };
 
             using (var conn = OpenConnection())
-            using (var cmd = new NpgsqlCommand($@"SELECT @p::{_pgTypeName}", conn))
             {
-                var plugin = new NpgsqlJsonNetPlugin();
-                plugin.Setup(conn.TypeMapper, new[] { typeof(Foo) });
+                conn.TypeMapper.UseJsonNet(new[] { typeof(int[]) });
 
-                cmd.Parameters.AddWithValue("p", expected);
-                using (var reader = cmd.ExecuteReader())
+                using (var cmd = new NpgsqlCommand($@"SELECT @p::{_pgTypeName}", conn))
                 {
-                    reader.Read();
-                    var actual = reader.GetFieldValue<int[]>(0);
-                    Assert.That(actual, Is.EqualTo(expected));
+                    cmd.Parameters.AddWithValue("p", expected);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        reader.Read();
+                        var actual = reader.GetFieldValue<int[]>(0);
+                        Assert.That(actual, Is.EqualTo(expected));
+                    }
                 }
-            }*/
+            }
         }
 
         NpgsqlConnection OpenConnection()
@@ -151,6 +150,37 @@ namespace Npgsql.Json.NET
         {
             _npgsqlDbType = npgsqlDbType;
             _pgTypeName = npgsqlDbType.ToString().ToLower();
+        }
+    }
+
+    public static class NpgsqlConnectionExtensions
+    {
+        public static int ExecuteNonQuery(this NpgsqlConnection conn, string sql, NpgsqlTransaction tx = null)
+        {
+            var cmd = tx == null ? new NpgsqlCommand(sql, conn) : new NpgsqlCommand(sql, conn, tx);
+            using (cmd)
+                return cmd.ExecuteNonQuery();
+        }
+
+        public static object ExecuteScalar(this NpgsqlConnection conn, string sql, NpgsqlTransaction tx = null)
+        {
+            var cmd = tx == null ? new NpgsqlCommand(sql, conn) : new NpgsqlCommand(sql, conn, tx);
+            using (cmd)
+                return cmd.ExecuteScalar();
+        }
+
+        public static async Task<int> ExecuteNonQueryAsync(this NpgsqlConnection conn, string sql, NpgsqlTransaction tx = null)
+        {
+            var cmd = tx == null ? new NpgsqlCommand(sql, conn) : new NpgsqlCommand(sql, conn, tx);
+            using (cmd)
+                return await cmd.ExecuteNonQueryAsync();
+        }
+
+        public static async Task<object> ExecuteScalarAsync(this NpgsqlConnection conn, string sql, NpgsqlTransaction tx = null)
+        {
+            var cmd = tx == null ? new NpgsqlCommand(sql, conn) : new NpgsqlCommand(sql, conn, tx);
+            using (cmd)
+                return await cmd.ExecuteScalarAsync();
         }
     }
 }

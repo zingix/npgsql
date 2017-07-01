@@ -38,7 +38,7 @@ namespace Npgsql.TypeHandlers
     /// http://www.postgresql.org/docs/current/static/rangetypes.html
     /// </remarks>
     /// <typeparam name="TElement">the range subtype</typeparam>
-    class RangeHandler<TElement> : ChunkingTypeHandler<NpgsqlRange<TElement>>
+    class RangeHandler<TElement> : TypeHandler<NpgsqlRange<TElement>>
     {
         /// <summary>
         /// The type handler for the element that this range type holds

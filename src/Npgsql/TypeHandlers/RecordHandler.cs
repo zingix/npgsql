@@ -50,7 +50,7 @@ namespace Npgsql.TypeHandlers
     /// * The length of the column(32-bit integer), or -1 if null
     /// * The column data encoded as binary
     /// </remarks>
-    class RecordHandler : ChunkingTypeHandler<object[]>
+    class RecordHandler : TypeHandler<object[]>
     {
         readonly ConnectorTypeMapper _typeMapper;
 

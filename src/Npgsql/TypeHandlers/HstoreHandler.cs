@@ -41,8 +41,8 @@ namespace Npgsql.TypeHandlers
             => new HstoreHandler(conn);
     }
 
-    class HstoreHandler : ChunkingTypeHandler<Dictionary<string, string>>,
-        IChunkingTypeHandler<IDictionary<string, string>>, IChunkingTypeHandler<string>
+    class HstoreHandler : TypeHandler<Dictionary<string, string>>,
+        ITypeHandler<IDictionary<string, string>>, ITypeHandler<string>
     {
         /// <summary>
         /// The text handler to which we delegate encoding/decoding of the actual strings
@@ -130,10 +130,10 @@ namespace Npgsql.TypeHandlers
             return hstore;
         }
 
-        ValueTask<IDictionary<string, string>> IChunkingTypeHandler<IDictionary<string, string>>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        ValueTask<IDictionary<string, string>> ITypeHandler<IDictionary<string, string>>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
             => new ValueTask<IDictionary<string, string>>(Read(buf, len, async, fieldDescription).Result);
 
-        async ValueTask<string> IChunkingTypeHandler<string>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
+        async ValueTask<string> ITypeHandler<string>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
         {
             var dict = await Read(buf, len, async, fieldDescription);
             var sb = new StringBuilder();

@@ -210,44 +210,11 @@ namespace Npgsql
                 ReadColumnLenIfNeeded();
                 if (_columnLen == -1)
                     throw new InvalidCastException("Column is null");
-                var isColumnInBuffer = _columnLen <= _buf.ReadBytesLeft;
 
-                // TODO: Duplication with NpgsqlDataReader.GetFieldValueInternal
-
-                T result;
-
-                // The type handler supports the requested type directly
-                var tHandler = handler as ITypeHandler<T>;
-                if (tHandler != null)
-                    result = isColumnInBuffer
-                        ? handler.Read<T>(_buf, _columnLen)
-                        : handler.Read<T>(_buf, _columnLen, false).Result;
-                else
-                {
-                    var t = typeof(T);
-                    if (!t.IsArray)
-                        throw new InvalidCastException($"Can't cast database type {handler.PgDisplayName} to {typeof(T).Name}");
-
-                    // Getting an array
-
-                    // We need to treat this as an actual array type, these need special treatment because of
-                    // typing/generics reasons (there is no way to express "array of X" with generics
-                    var elementType = t.GetElementType();
-                    var arrayHandler = handler as ArrayHandler;
-                    if (arrayHandler == null)
-                        throw new InvalidCastException($"Can't cast database type {handler.PgDisplayName} to {typeof(T).Name}");
-
-                    if (arrayHandler.GetElementFieldType() == elementType)
-                        result = isColumnInBuffer
-                            ? (T)handler.ReadAsObject(_buf, _columnLen)
-                            : (T)handler.ReadAsObject(_buf, _columnLen, false).Result;
-                    else if (arrayHandler.GetElementPsvType() == elementType)
-                        result = isColumnInBuffer
-                            ? (T)handler.ReadPsvAsObject(_buf, _columnLen)
-                            : (T)handler.ReadPsvAsObject(_buf, _columnLen, false).Result;
-                    else
-                        throw new InvalidCastException($"Can't cast database type {handler.PgDisplayName} to {typeof(T).Name}");
-                }
+                // If we know the entire column is already in memory, use the code path without async
+                var result = _columnLen <= _buf.ReadBytesLeft
+                    ? handler.Read<T>(_buf, _columnLen)
+                    : handler.Read<T>(_buf, _columnLen, false).Result;
 
                 _leftToReadInDataMsg -= _columnLen;
                 _columnLen = int.MinValue;   // Mark that the (next) column length hasn't been read yet
