@@ -83,13 +83,13 @@ namespace Npgsql.TypeHandlers
 
         #region Read
 
-        public override TEnum Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        public override TEnum Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
             var str = buf.ReadString(len);
             var success = _labelToEnum.TryGetValue(str, out var value);
 
             if (!success)
-                throw new SafeReadException(new InvalidCastException($"Received enum value '{str}' from database which wasn't found on enum {typeof(TEnum)}"));
+                throw new NpgsqlSafeReadException(new InvalidCastException($"Received enum value '{str}' from database which wasn't found on enum {typeof(TEnum)}"));
 
             return value;
         }
@@ -98,7 +98,7 @@ namespace Npgsql.TypeHandlers
 
         #region Write
 
-        public override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
+        protected override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
         {
             if (!(value is TEnum))
                 throw CreateConversionException(value.GetType());
@@ -110,7 +110,7 @@ namespace Npgsql.TypeHandlers
             return Encoding.UTF8.GetByteCount(str);
         }
 
-        protected override void Write(object value, WriteBuffer buf, NpgsqlParameter parameter = null)
+        protected override void Write(object value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter = null)
         {
             string str;
             var asEnum = (TEnum)value;
@@ -142,7 +142,7 @@ namespace Npgsql.TypeHandlers
             }
         }
 
-        internal override TypeHandler Create(NpgsqlConnection conn)
+        protected override TypeHandler Create(NpgsqlConnection conn)
             => new EnumHandler<TEnum>(_enumToLabel, _labelToEnum);
     }
 }

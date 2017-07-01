@@ -83,7 +83,7 @@ namespace Npgsql.TypeHandlers
 
         #region Read
 
-        public override async ValueTask<T> Read(ReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
+        public override async ValueTask<T> Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
         {
             ResolveFieldsIfNeeded();
             Debug.Assert(_members != null);
@@ -118,13 +118,13 @@ namespace Npgsql.TypeHandlers
 
         #region Write
 
-        public override int ValidateAndGetLength(object value, ref LengthCache lengthCache, NpgsqlParameter parameter)
+        protected internal override int ValidateAndGetLength(object value, ref NpgsqlLengthCache lengthCache, NpgsqlParameter parameter)
         {
             ResolveFieldsIfNeeded();
             Debug.Assert(_members != null);
 
             if (lengthCache == null)
-                lengthCache = new LengthCache(1);
+                lengthCache = new NpgsqlLengthCache(1);
             if (lengthCache.IsPopulated)
                 return lengthCache.Get();
 
@@ -143,7 +143,7 @@ namespace Npgsql.TypeHandlers
             return lengthCache.Lengths[pos] = totalLen;
         }
 
-        protected override async Task Write(object value, WriteBuffer buf, LengthCache lengthCache, NpgsqlParameter parameter,
+        protected override async Task Write(object value, NpgsqlWriteBuffer buf, NpgsqlLengthCache lengthCache, NpgsqlParameter parameter,
             bool async, CancellationToken cancellationToken)
         {
             Debug.Assert(_members != null);
@@ -281,7 +281,7 @@ namespace Npgsql.TypeHandlers
             _nameTranslator = nameTranslator;
         }
 
-        internal override TypeHandler Create(NpgsqlConnection conn)
+        protected override TypeHandler Create(NpgsqlConnection conn)
             => new CompositeHandler<T>(_nameTranslator, conn.Connector.TypeMapper);
 
     }

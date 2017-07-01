@@ -61,11 +61,12 @@ namespace Npgsql
 
         /// <summary>
         /// Can be used to communicate a value from the validation phase to the writing phase.
+        /// To be used by type handlers only.
         /// </summary>
-        internal object ConvertedValue { get; set; }
+        public object ConvertedValue { get; set; }
 
         [CanBeNull]
-        internal LengthCache LengthCache { get; private set; }
+        internal NpgsqlLengthCache LengthCache { get; private set; }
 
         [CanBeNull]
         internal TypeHandler Handler { get; private set; }
@@ -629,7 +630,7 @@ namespace Npgsql
             return len;
         }
 
-        internal Task WriteWithLength(WriteBuffer buf, bool async, CancellationToken cancellationToken)
+        internal Task WriteWithLength(NpgsqlWriteBuffer buf, bool async, CancellationToken cancellationToken)
             => Handler.WriteWithLength(Value, buf, LengthCache, this, async, cancellationToken);
 
         void ClearBind()

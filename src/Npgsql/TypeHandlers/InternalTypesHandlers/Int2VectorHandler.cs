@@ -31,7 +31,7 @@ namespace Npgsql.TypeHandlers.InternalTypesHandlers
     [TypeMapping("int2vector", NpgsqlDbType.Int2Vector)]
     class Int2VectorHandlerFactory : TypeHandlerFactory
     {
-        internal override TypeHandler Create(NpgsqlConnection conn)
+        protected override TypeHandler Create(NpgsqlConnection conn)
             => new Int2VectorHandler(conn.Connector.TypeMapper.DatabaseInfo.ByName["int2"]);
     }
 

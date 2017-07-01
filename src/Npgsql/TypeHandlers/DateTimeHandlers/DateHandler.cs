@@ -34,7 +34,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
     [TypeMapping("date", NpgsqlDbType.Date, DbType.Date, typeof(NpgsqlDate))]
     class DateHandlerFactory : TypeHandlerFactory
     {
-        internal override TypeHandler Create(NpgsqlConnection conn)
+        protected override TypeHandler Create(NpgsqlConnection conn)
             => new DateHandler(conn.Connector.ConvertInfinityDateTime);
     }
 
@@ -57,7 +57,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             _convertInfinityDateTime = convertInfinityDateTime;
         }
 
-        public override DateTime Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        public override DateTime Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
             var npgsqlDate = ReadPsv(buf, len, fieldDescription);
             try {
@@ -69,14 +69,14 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
                     return DateTime.MaxValue;
                 return DateTime.MinValue;
             } catch (Exception e) {
-                throw new SafeReadException(e);
+                throw new NpgsqlSafeReadException(e);
             }
         }
 
         /// <remarks>
         /// Copied wholesale from Postgresql backend/utils/adt/datetime.c:j2date
         /// </remarks>
-        internal override NpgsqlDate ReadPsv(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        protected override NpgsqlDate ReadPsv(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
             var binDate = buf.ReadInt32();
 
@@ -91,7 +91,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             }
         }
 
-        public override int ValidateAndGetLength(object value, [CanBeNull] NpgsqlParameter parameter)
+        protected override int ValidateAndGetLength(object value, [CanBeNull] NpgsqlParameter parameter)
         {
             if (!(value is DateTime) && !(value is NpgsqlDate))
             {
@@ -103,7 +103,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             return 4;
         }
 
-        protected override void Write(object value, WriteBuffer buf, [CanBeNull] NpgsqlParameter parameter)
+        protected override void Write(object value, NpgsqlWriteBuffer buf, [CanBeNull] NpgsqlParameter parameter)
         {
             if (parameter?.ConvertedValue != null)
                 value = parameter.ConvertedValue;

@@ -48,7 +48,7 @@ namespace Npgsql.TypeHandlers
             PostgresType = UnknownBackendType.Instance;
         }
 
-        public override ValueTask<string> Read(ReadBuffer buf, int byteLen, bool async, FieldDescription fieldDescription = null)
+        public override ValueTask<string> Read(NpgsqlReadBuffer buf, int byteLen, bool async, FieldDescription fieldDescription = null)
         {
             if (fieldDescription == null)
                 throw new Exception($"Received an unknown field but {nameof(fieldDescription)} is null (i.e. COPY mode)");
@@ -60,8 +60,8 @@ namespace Npgsql.TypeHandlers
                 buf.Skip(byteLen);
                 // At least get the name of the PostgreSQL type for the exception
                 if (_connector.TypeMapper.DatabaseInfo.ByOID.TryGetValue(fieldDescription.TypeOID, out var pgType))
-                    throw new SafeReadException(new NotSupportedException($"The field '{fieldDescription.Name}' has type '{pgType.DisplayName}', which is currently unknown to Npgsql. You can retrieve it as a string by marking it as unknown, please see the FAQ."));
-                throw new SafeReadException(new NotSupportedException($"The field '{fieldDescription.Name}' has a type currently unknown to Npgsql (OID {fieldDescription.TypeOID}). You can retrieve it as a string by marking it as unknown, please see the FAQ."));
+                    throw new NpgsqlSafeReadException(new NotSupportedException($"The field '{fieldDescription.Name}' has type '{pgType.DisplayName}', which is currently unknown to Npgsql. You can retrieve it as a string by marking it as unknown, please see the FAQ."));
+                throw new NpgsqlSafeReadException(new NotSupportedException($"The field '{fieldDescription.Name}' has a type currently unknown to Npgsql (OID {fieldDescription.TypeOID}). You can retrieve it as a string by marking it as unknown, please see the FAQ."));
             }
             return base.Read(buf, byteLen, async, fieldDescription);
         }

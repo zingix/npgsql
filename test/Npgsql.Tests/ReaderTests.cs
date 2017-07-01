@@ -1293,7 +1293,7 @@ LANGUAGE plpgsql VOLATILE";
         #endregion GetChars / GetTextReader
 
 #if DEBUG
-        [Test, Description("Tests that everything goes well when a type handler generates a SafeReadException")]
+        [Test, Description("Tests that everything goes well when a type handler generates a NpgsqlSafeReadException")]
         [Timeout(5000)]
         public void SafeReadException()
         {
@@ -1316,7 +1316,7 @@ LANGUAGE plpgsql VOLATILE";
             }
         }
 
-        [Test, Description("Tests that when a type handler generates an exception that isn't a SafeReadException, the connection is properly broken")]
+        [Test, Description("Tests that when a type handler generates an exception that isn't a NpgsqlSafeReadException, the connection is properly broken")]
         [Timeout(5000)]
         public void NonSafeReadException()
         {
@@ -1363,7 +1363,7 @@ LANGUAGE plpgsql VOLATILE";
     {
         readonly bool _safe;
         internal ExplodingTypeHandlerFactory(bool safe) { _safe = safe; }
-        internal override TypeHandler Create(NpgsqlConnection conn)
+        protected override TypeHandler Create(NpgsqlConnection conn)
             => new ExplodingTypeHandler(_safe);
     }
 
@@ -1372,16 +1372,16 @@ LANGUAGE plpgsql VOLATILE";
         readonly bool _safe;
         internal ExplodingTypeHandler(bool safe) { _safe = safe; }
 
-        public override int Read(ReadBuffer buf, int len, FieldDescription fieldDescription)
+        public override int Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription)
         {
             buf.ReadInt32();
             throw _safe
-                ? new SafeReadException(new Exception("Safe read exception as requested"))
+                ? new NpgsqlSafeReadException(new Exception("Safe read exception as requested"))
                 : throw new Exception("Non-safe read exception as requested");
         }
 
-        public override int ValidateAndGetLength(object value, NpgsqlParameter parameter) { throw new NotSupportedException(); }
-        protected override void Write(object value, WriteBuffer buf, NpgsqlParameter parameter) { throw new NotSupportedException(); }
+        protected override int ValidateAndGetLength(object value, NpgsqlParameter parameter) { throw new NotSupportedException(); }
+        protected override void Write(object value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter) { throw new NotSupportedException(); }
     }
 
     #endregion

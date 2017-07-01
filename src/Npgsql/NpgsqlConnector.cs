@@ -75,19 +75,19 @@ namespace Npgsql
         /// <summary>
         /// Buffer used for reading data.
         /// </summary>
-        internal ReadBuffer ReadBuffer { get; private set; }
+        internal NpgsqlReadBuffer ReadBuffer { get; private set; }
 
         /// <summary>
         /// If we read a data row that's bigger than <see cref="ReadBuffer"/>, we allocate an oversize buffer.
         /// The original (smaller) buffer is stored here, and restored when the connection is reset.
         /// </summary>
         [CanBeNull]
-        ReadBuffer _origReadBuffer;
+        NpgsqlReadBuffer _origReadBuffer;
 
         /// <summary>
         /// Buffer used for writing data.
         /// </summary>
-        internal WriteBuffer WriteBuffer { get; private set; }
+        internal NpgsqlWriteBuffer WriteBuffer { get; private set; }
 
         /// <summary>
         /// Version of backend server this connector is connected to.
@@ -511,8 +511,8 @@ namespace Npgsql
                 TextEncoding = Settings.Encoding == "UTF8"
                     ? PGUtil.UTF8Encoding
                     : Encoding.GetEncoding(Settings.Encoding, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
-                ReadBuffer = new ReadBuffer(this, _stream, Settings.ReadBufferSize, TextEncoding);
-                WriteBuffer = new WriteBuffer(this, _stream, Settings.WriteBufferSize, TextEncoding);
+                ReadBuffer = new NpgsqlReadBuffer(this, _stream, Settings.ReadBufferSize, TextEncoding);
+                WriteBuffer = new NpgsqlWriteBuffer(this, _stream, Settings.WriteBufferSize, TextEncoding);
                 ParseMessage = new ParseMessage(TextEncoding);
                 QueryMessage = new QueryMessage(TextEncoding);
 
@@ -954,7 +954,7 @@ namespace Npgsql
         }
 
         [CanBeNull]
-        IBackendMessage ParseServerMessage(ReadBuffer buf, BackendMessageCode code, int len, bool isPrependedMessage)
+        IBackendMessage ParseServerMessage(NpgsqlReadBuffer buf, BackendMessageCode code, int len, bool isPrependedMessage)
         {
             switch (code)
             {
@@ -1864,8 +1864,9 @@ namespace Npgsql
         bool SupportsDiscardTemp => ServerVersion >= new Version(8, 3, 0);
         bool SupportsDiscard => ServerVersion >= new Version(8, 3, 0); // Redshift is 8.0.2
         internal bool SupportsRangeTypes => ServerVersion >= new Version(9, 2, 0);
-        internal bool UseConformantStrings { get; private set; }
         internal bool SupportsEStringPrefix => ServerVersion >= new Version(8, 1, 0);
+        internal bool UseConformantStrings { get; private set; }
+        internal bool IntegerDateTimes { get; private set; }
 
         void ProcessServerVersion(string value)
         {
@@ -1925,6 +1926,10 @@ namespace Npgsql
 
             case "standard_conforming_strings":
                 UseConformantStrings = (value == "on");
+                return;
+
+            case "integer_datetimes":
+                IntegerDateTimes = value == "on";
                 return;
             }
         }

@@ -41,7 +41,7 @@ namespace Npgsql.Json.NET
         public void DeserializeFailure()
         {
             using (var conn = OpenConnection())
-            using (var cmd = new NpgsqlCommand($@"SELECT '[1, 2, 3]'::{pgTypeName}", conn))
+            using (var cmd = new NpgsqlCommand($@"SELECT '[1, 2, 3]'::{_pgTypeName}", conn))
             using (var reader = cmd.ExecuteReader())
             {
                 reader.Read();
@@ -121,7 +121,7 @@ namespace Npgsql.Json.NET
             var expected = new[] { 1, 2, 3 };
 
             using (var conn = OpenConnection())
-            using (var cmd = new NpgsqlCommand($@"SELECT @p::{pgTypeName}", conn))
+            using (var cmd = new NpgsqlCommand($@"SELECT @p::{_pgTypeName}", conn))
             {
                 var plugin = new NpgsqlJsonNetPlugin();
                 plugin.Setup(conn.TypeMapper, new[] { typeof(Foo) });
@@ -145,12 +145,12 @@ namespace Npgsql.Json.NET
         }
 
         readonly NpgsqlDbType _npgsqlDbType;
-        readonly string pgTypeName;
+        readonly string _pgTypeName;
 
         public JsonTests(NpgsqlDbType npgsqlDbType)
         {
             _npgsqlDbType = npgsqlDbType;
-            pgTypeName = npgsqlDbType.ToString().ToLower();
+            _pgTypeName = npgsqlDbType.ToString().ToLower();
         }
     }
 }

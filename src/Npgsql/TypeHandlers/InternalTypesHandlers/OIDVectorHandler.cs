@@ -32,7 +32,7 @@ namespace Npgsql.TypeHandlers.InternalTypesHandlers
     [TypeMapping("oidvector", NpgsqlDbType.Oidvector)]
     class OIDectorHandlerFactory : TypeHandlerFactory
     {
-        internal override TypeHandler Create(NpgsqlConnection conn)
+        protected override TypeHandler Create(NpgsqlConnection conn)
             => new OIDVectorHandler(conn.Connector.TypeMapper.DatabaseInfo.ByName["oid"]);
     }
 

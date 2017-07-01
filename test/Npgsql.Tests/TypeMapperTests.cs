@@ -143,7 +143,7 @@ CHECK
 
         class DummyTypeHandlerFactory : TypeHandlerFactory
         {
-            internal override TypeHandler Create(NpgsqlConnection conn)
+            protected override TypeHandler Create(NpgsqlConnection conn)
                 => throw new Exception();
         }
 
@@ -188,7 +188,7 @@ CHECK
         {
             internal int Reads, Writes;
 
-            internal override TypeHandler Create(NpgsqlConnection conn) 
+            protected override TypeHandler Create(NpgsqlConnection conn) 
                 => new MyInt32Handler(this);
         }
 
@@ -201,13 +201,13 @@ CHECK
                 _factory = factory;
             }
 
-            public override int Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+            public override int Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
             {
                 _factory.Reads++;
                 return base.Read(buf, len, fieldDescription);
             }
 
-            protected override void Write(object value, WriteBuffer buf, NpgsqlParameter parameter = null)
+            protected override void Write(object value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter = null)
             {
                 _factory.Writes++;
                 base.Write(value, buf, parameter);

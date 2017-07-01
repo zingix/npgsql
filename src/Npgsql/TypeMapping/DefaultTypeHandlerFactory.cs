@@ -46,7 +46,7 @@ namespace Npgsql.TypeMapping
             _handlerType = handlerType;
         }
 
-        internal override TypeHandler Create(NpgsqlConnection conn)
+        protected override TypeHandler Create(NpgsqlConnection conn)
             => (TypeHandler)Activator.CreateInstance(_handlerType);
     }
 }

@@ -44,10 +44,10 @@ namespace Npgsql.TypeHandlers.NetworkHandlers
         const byte IPv6 = 3;
         // ReSharper restore InconsistentNaming
 
-        public override IPAddress Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        public override IPAddress Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => ((ISimpleTypeHandler<NpgsqlInet>)this).Read(buf, len, fieldDescription).Address;
 
-        internal static NpgsqlInet DoRead(ReadBuffer buf, [CanBeNull] FieldDescription fieldDescription, int len, bool isCidrHandler)
+        internal static NpgsqlInet DoRead(NpgsqlReadBuffer buf, [CanBeNull] FieldDescription fieldDescription, int len, bool isCidrHandler)
         {
             buf.ReadByte();  // addressFamily
             var mask = buf.ReadByte();
@@ -61,10 +61,10 @@ namespace Npgsql.TypeHandlers.NetworkHandlers
             return new NpgsqlInet(new IPAddress(bytes), mask);
         }
 
-        internal override NpgsqlInet ReadPsv(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        protected override NpgsqlInet ReadPsv(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => DoRead(buf, fieldDescription, len, false);
 
-        string ISimpleTypeHandler<string>.Read(ReadBuffer buf, int len, [CanBeNull] FieldDescription fieldDescription)
+        string ISimpleTypeHandler<string>.Read(NpgsqlReadBuffer buf, int len, [CanBeNull] FieldDescription fieldDescription)
             => ((ISimpleTypeHandler<NpgsqlInet>)this).Read(buf, len, fieldDescription).ToString();
 
         internal static int DoValidateAndGetLength(object value)
@@ -88,10 +88,10 @@ namespace Npgsql.TypeHandlers.NetworkHandlers
             }
         }
 
-        public override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
+        protected override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
             => DoValidateAndGetLength(value);
 
-        internal static void DoWrite(object value, WriteBuffer buf, bool isCidrHandler)
+        internal static void DoWrite(object value, NpgsqlWriteBuffer buf, bool isCidrHandler)
         {
             IPAddress ip;
             int mask;
@@ -132,7 +132,7 @@ namespace Npgsql.TypeHandlers.NetworkHandlers
             buf.WriteBytes(bytes, 0, bytes.Length);
         }
 
-        protected override void Write(object value, WriteBuffer buf, NpgsqlParameter parameter = null)
+        protected override void Write(object value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter = null)
             => DoWrite(value, buf, false);
     }
 }

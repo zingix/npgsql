@@ -50,9 +50,9 @@ namespace Npgsql
         #region Fields and Properties
 
         NpgsqlConnector _connector;
-        WriteBuffer _buf;
+        NpgsqlWriteBuffer _buf;
         ConnectorTypeMapper _typeMapper;
-        LengthCache _lengthCache;
+        NpgsqlLengthCache _lengthCache;
         bool _isDisposed;
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Npgsql
             _connector = connector;
             _buf = connector.WriteBuffer;
             _typeMapper = connector.TypeMapper;
-            _lengthCache = new LengthCache();
+            _lengthCache = new NpgsqlLengthCache();
             _column = -1;
             _dummyParam = new NpgsqlParameter();
 

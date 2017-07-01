@@ -821,6 +821,22 @@ namespace Npgsql
             }
         }
 
+        /// <summary>
+        /// Reports whether the backend uses the newer integer timestamp representation.
+        /// Note that the old floating point representation is not supported.
+        /// </summary>
+        [Browsable(false)]
+        [PublicAPI]
+        public bool HasIntegerDateTimes
+        {
+            get
+            {
+                CheckConnectionOpen();
+                Debug.Assert(Connector != null);
+                return Connector.IntegerDateTimes;
+            }
+        }
+
         #endregion Backend version and capabilities
 
         #region Copy

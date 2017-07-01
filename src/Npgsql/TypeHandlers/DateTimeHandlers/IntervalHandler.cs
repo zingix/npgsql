@@ -33,10 +33,8 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
     class IntervalHandlerFactory : TypeHandlerFactory
     {
         // Check for the legacy floating point timestamps feature
-        internal override TypeHandler Create(NpgsqlConnection conn)
-            => new IntervalHandler(
-                conn.Connector.BackendParams.TryGetValue("integer_datetimes", out var s)
-                && s == "on");
+        protected override TypeHandler Create(NpgsqlConnection conn)
+            => new IntervalHandler(conn.HasIntegerDateTimes);
     }
 
     /// <remarks>
@@ -55,10 +53,10 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             _integerFormat = integerFormat;
         }
 
-        public override TimeSpan Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        public override TimeSpan Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => (TimeSpan)((ISimpleTypeHandler<NpgsqlTimeSpan>)this).Read(buf, len, fieldDescription);
 
-        internal override NpgsqlTimeSpan ReadPsv(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        protected override NpgsqlTimeSpan ReadPsv(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
             CheckIntegerFormat();
             var ticks = buf.ReadInt64();
@@ -67,7 +65,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             return new NpgsqlTimeSpan(month, day, ticks * 10);
         }
 
-        public override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
+        protected override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
         {
             CheckIntegerFormat();
 
@@ -85,7 +83,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             return 16;
         }
 
-        protected override void Write(object value, WriteBuffer buf, NpgsqlParameter parameter = null)
+        protected override void Write(object value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter = null)
         {
             if (parameter?.ConvertedValue != null)
                 value = parameter.ConvertedValue;

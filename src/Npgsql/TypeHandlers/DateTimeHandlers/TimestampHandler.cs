@@ -34,11 +34,8 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
     class TimestampHandlerFactory : TypeHandlerFactory
     {
         // Check for the legacy floating point timestamps feature
-        internal override TypeHandler Create(NpgsqlConnection conn)
-            => new TimestampHandler(
-                conn.Connector.BackendParams.TryGetValue("integer_datetimes", out var s)
-                && s == "on",
-                conn.Connector.ConvertInfinityDateTime);
+        protected override TypeHandler Create(NpgsqlConnection conn)
+            => new TimestampHandler(conn.HasIntegerDateTimes, conn.Connector.ConvertInfinityDateTime);
     }
 
     /// <remarks>
@@ -65,7 +62,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             ConvertInfinityDateTime = convertInfinityDateTime;
         }
 
-        public override DateTime Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        public override DateTime Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
             // TODO: Convert directly to DateTime without passing through NpgsqlTimeStamp?
             var ts = ReadTimeStamp(buf, len, fieldDescription);
@@ -81,14 +78,14 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             }
             catch (Exception e)
             {
-                throw new SafeReadException(e);
+                throw new NpgsqlSafeReadException(e);
             }
         }
 
-        internal override NpgsqlDateTime ReadPsv(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        protected override NpgsqlDateTime ReadPsv(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
             => ReadTimeStamp(buf, len, fieldDescription);
 
-        protected NpgsqlDateTime ReadTimeStamp(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        protected NpgsqlDateTime ReadTimeStamp(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
             CheckIntegerFormat();
 
@@ -120,7 +117,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             }
         }
 
-        public override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
+        protected override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
         {
             CheckIntegerFormat();
 
@@ -134,7 +131,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             return 8;
         }
 
-        protected override void Write(object value, WriteBuffer buf, NpgsqlParameter parameter = null)
+        protected override void Write(object value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter = null)
         {
             if (parameter?.ConvertedValue != null)
                 value = parameter.ConvertedValue;

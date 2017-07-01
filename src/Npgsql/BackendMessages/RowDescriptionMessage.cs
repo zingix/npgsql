@@ -50,7 +50,7 @@ namespace Npgsql.BackendMessages
             _caseInsensitiveNameIndex = new Dictionary<string, int>(KanaWidthCaseInsensitiveComparer.Instance);
         }
 
-        internal RowDescriptionMessage Load(ReadBuffer buf, ConnectorTypeMapper typeMapper)
+        internal RowDescriptionMessage Load(NpgsqlReadBuffer buf, ConnectorTypeMapper typeMapper)
         {
             Fields.Clear();
             _nameIndex.Clear();
@@ -149,7 +149,7 @@ namespace Npgsql.BackendMessages
     /// A descriptive record on a single field received from PostgreSQL.
     /// See RowDescription in http://www.postgresql.org/docs/current/static/protocol-message-formats.html
     /// </summary>
-    sealed class FieldDescription
+    public sealed class FieldDescription
     {
         internal void Populate(
             ConnectorTypeMapper typeMapper, string name, uint tableOID, short columnAttributeNumber,
@@ -182,12 +182,12 @@ namespace Npgsql.BackendMessages
         /// <summary>
         /// The data type size (see pg_type.typlen). Note that negative values denote variable-width types.
         /// </summary>
-        internal short TypeSize { get; set; }
+        public short TypeSize { get; set; }
 
         /// <summary>
         /// The type modifier (see pg_attribute.atttypmod). The meaning of the modifier is type-specific.
         /// </summary>
-        internal int TypeModifier { get; set; }
+        public int TypeModifier { get; set; }
 
         /// <summary>
         /// If the field can be identified as a column of a specific table, the object ID of the table; otherwise zero.
@@ -228,7 +228,7 @@ namespace Npgsql.BackendMessages
         internal TypeHandler RealHandler { get; private set; }
 
         internal PostgresType PostgresType => RealHandler.PostgresType;
-        public Type FieldType => Handler.GetFieldType(this);
+        internal Type FieldType => Handler.GetFieldType(this);
 
         void ResolveHandler()
         {
@@ -239,8 +239,8 @@ namespace Npgsql.BackendMessages
 
         ConnectorTypeMapper _typeMapper;
 
-        public bool IsBinaryFormat => FormatCode == FormatCode.Binary;
-        public bool IsTextFormat => FormatCode == FormatCode.Text;
+        internal bool IsBinaryFormat => FormatCode == FormatCode.Binary;
+        internal bool IsTextFormat => FormatCode == FormatCode.Text;
 
         public override string ToString() => Name + (Handler == null ? "" : $"({Handler.PgDisplayName})");
     }

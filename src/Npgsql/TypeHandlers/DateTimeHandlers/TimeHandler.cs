@@ -34,10 +34,8 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
     class TimeHandlerFactory : TypeHandlerFactory
     {
         // Check for the legacy floating point timestamps feature
-        internal override TypeHandler Create(NpgsqlConnection conn)
-            => new TimeHandler(
-                conn.Connector.BackendParams.TryGetValue("integer_datetimes", out var s)
-                && s == "on");
+        protected override TypeHandler Create(NpgsqlConnection conn)
+            => new TimeHandler(conn.HasIntegerDateTimes);
     }
 
     /// <remarks>
@@ -56,7 +54,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             _integerFormat = integerFormat;
         }
 
-        public override TimeSpan Read(ReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        public override TimeSpan Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
         {
             CheckIntegerFormat();
 
@@ -64,7 +62,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             return new TimeSpan(buf.ReadInt64() * 10);
         }
 
-        public override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
+        protected override int ValidateAndGetLength(object value, NpgsqlParameter parameter = null)
         {
             CheckIntegerFormat();
 
@@ -81,7 +79,7 @@ namespace Npgsql.TypeHandlers.DateTimeHandlers
             return 8;
         }
 
-        protected override void Write(object value, WriteBuffer buf, NpgsqlParameter parameter = null)
+        protected override void Write(object value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter = null)
         {
             if (parameter?.ConvertedValue != null)
                 value = parameter.ConvertedValue;

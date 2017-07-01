@@ -13,7 +13,7 @@ namespace Npgsql.Json.NET
 {
     class JsonbHandlerFactory : TypeHandlerFactory
     {
-        internal override TypeHandler Create(NpgsqlConnection conn)
+        protected override TypeHandler Create(NpgsqlConnection conn)
             => new JsonbHandler(conn);
     }
 
@@ -22,7 +22,7 @@ namespace Npgsql.Json.NET
         public JsonbHandler(NpgsqlConnection connection)
             : base(connection) {}
 
-        internal override async ValueTask<T> Read<T>(ReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
+        protected override async ValueTask<T> Read<T>(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
         {
             var s = await base.Read<string>(buf, len, async, fieldDescription);
             if (typeof(T) == typeof(string))
@@ -33,11 +33,11 @@ namespace Npgsql.Json.NET
             }
             catch (Exception e)
             {
-                throw new SafeReadException(e);
+                throw new NpgsqlSafeReadException(e);
             }
         }
 
-        public override int ValidateAndGetLength(object value, ref LengthCache lengthCache, NpgsqlParameter parameter = null)
+        protected override int ValidateAndGetLength(object value, ref NpgsqlLengthCache lengthCache, NpgsqlParameter parameter = null)
         {
             var s = value as string;
             if (s == null)
@@ -49,7 +49,7 @@ namespace Npgsql.Json.NET
             return base.ValidateAndGetLength(s, ref lengthCache, parameter);
         }
 
-        protected override Task Write(object value, WriteBuffer buf, LengthCache lengthCache, NpgsqlParameter parameter,
+        protected override Task Write(object value, NpgsqlWriteBuffer buf, NpgsqlLengthCache lengthCache, NpgsqlParameter parameter,
             bool async, CancellationToken cancellationToken)
         {
             if (parameter?.ConvertedValue != null)

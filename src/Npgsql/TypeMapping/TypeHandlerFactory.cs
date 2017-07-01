@@ -42,6 +42,6 @@ namespace Npgsql.TypeMapping
             return handler;
         }
 
-        internal abstract TypeHandler Create(NpgsqlConnection conn);
+        protected abstract TypeHandler Create(NpgsqlConnection conn);
     }
 }
