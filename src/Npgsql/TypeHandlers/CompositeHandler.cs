@@ -47,29 +47,17 @@ namespace Npgsql.TypeHandlers
         Type CompositeType { get; }
     }
 
-    /// <summary>
-    /// Type handler for PostgreSQL composite types
-    /// </summary>
-    /// <remarks>
-    /// http://www.postgresql.org/docs/current/static/rowtypes.html
-    ///
-    /// Encoding:
-    /// A 32-bit integer with the number of columns, then for each column:
-    /// * An OID indicating the type of the column
-    /// * The length of the column(32-bit integer), or -1 if null
-    /// * The column data encoded as binary
-    /// </remarks>
-    /// <typeparam name="T">the CLR type to map to the PostgreSQL composite type </typeparam>
-    class CompositeHandler<T> : NpgsqlTypeHandler<T>, ICompositeHandler where T : new()
+    public abstract class CompositeHandlerBase<T> : NpgsqlTypeHandler<T>, ICompositeHandler
     {
         readonly ConnectorTypeMapper _typeMapper;
         readonly INpgsqlNameTranslator _nameTranslator;
+
         [CanBeNull]
-        List<MemberDescriptor> _members;
+        protected List<MemberDescriptor> Members { get; private set; }
 
         public Type CompositeType => typeof(T);
 
-        internal CompositeHandler(INpgsqlNameTranslator nameTranslator, ConnectorTypeMapper typeMapper)
+        protected CompositeHandlerBase(INpgsqlNameTranslator nameTranslator, NpgsqlConnection conn)
         {
             _nameTranslator = nameTranslator;
 
@@ -78,107 +66,21 @@ namespace Npgsql.TypeHandlers
             // to their type handlers is done only very late upon first usage of the handler,
             // allowing composite types to be activated in any order regardless of dependencies.
 
-            _typeMapper = typeMapper;
+            _typeMapper = conn.Connector.TypeMapper;
         }
-
-        #region Read
-
-        public override async ValueTask<T> Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
-        {
-            ResolveFieldsIfNeeded();
-            Debug.Assert(_members != null);
-
-            await buf.Ensure(4, async);
-            var fieldCount = buf.ReadInt32();
-            if (fieldCount != _members.Count)
-            {
-                // PostgreSQL sanity check
-                throw new Exception($"pg_attributes contains {_members.Count} rows for type {PgDisplayName}, but {fieldCount} fields were received!");
-            }
-
-            // If T is a struct, we have to box it here to properly set its fields below
-            object result = new T();
-
-            foreach (var fieldDescriptor in _members)
-            {
-                await buf.Ensure(8, async);
-                buf.ReadInt32();  // read typeOID, not used
-                var fieldLen = buf.ReadInt32();
-                if (fieldLen == -1)
-                {
-                    // Null field, simply skip it and leave at default
-                    continue;
-                }
-                fieldDescriptor.SetValue(result, await fieldDescriptor.Handler.ReadAsObject(buf, fieldLen, async));
-            }
-            return (T)result;
-        }
-
-        #endregion
-
-        #region Write
-
-        protected internal override int ValidateAndGetLength(object value, ref NpgsqlLengthCache lengthCache, NpgsqlParameter parameter = null)
-        {
-            ResolveFieldsIfNeeded();
-            Debug.Assert(_members != null);
-
-            if (lengthCache == null)
-                lengthCache = new NpgsqlLengthCache(1);
-            if (lengthCache.IsPopulated)
-                return lengthCache.Get();
-
-            // Leave empty slot for the entire composite type, and go ahead an populate the element slots
-            var pos = lengthCache.Position;
-            lengthCache.Set(0);
-            var totalLen = 4;  // number of fields
-            foreach (var f in _members)
-            {
-                totalLen += 4 + 4;  // type oid + field length
-                var fieldValue = f.GetValue(value);
-                if (fieldValue == null)
-                    continue;
-                totalLen += f.Handler.ValidateAndGetLength(fieldValue, ref lengthCache);
-            }
-            return lengthCache.Lengths[pos] = totalLen;
-        }
-
-        protected override async Task Write(object value, NpgsqlWriteBuffer buf, NpgsqlLengthCache lengthCache, NpgsqlParameter parameter, bool async)
-        {
-            Debug.Assert(_members != null);
-
-            var composite = (T)value;
-
-            if (buf.WriteSpaceLeft < 4)
-                await buf.Flush(async);
-            buf.WriteInt32(_members.Count);
-
-            foreach (var fieldDescriptor in _members)
-            {
-                var fieldHandler = fieldDescriptor.Handler;
-                var fieldValue = fieldDescriptor.GetValue(composite);
-
-                if (buf.WriteSpaceLeft < 4)
-                    await buf.Flush(async);
-
-                buf.WriteUInt32(fieldDescriptor.OID);
-                await fieldHandler.WriteWithLength(fieldValue, buf, lengthCache, null, async);
-            }
-        }
-
-        #endregion
 
         #region Misc
 
-        void ResolveFieldsIfNeeded()
+        protected void ResolveFieldsIfNeeded()
         {
-            if (_members != null)
+            if (Members != null)
                 return;
 
-            Debug.Assert(PostgresType is PostgresCompositeType, "CompositeHandler initialized with a non-composite type");
+            Debug.Assert(PostgresType != null, $"{nameof(PostgresType)} is null");
+            Debug.Assert(PostgresType is PostgresCompositeType, "Composite handler initialized with a non-composite type");
             var rawFields = ((PostgresCompositeType)PostgresType).Fields;
 
-            _members = new List<MemberDescriptor>(rawFields.Count);
+            Members = new List<MemberDescriptor>(rawFields.Count);
             foreach (var rawField in rawFields)
             {
                 if (!_typeMapper.TryGetByOID(rawField.TypeOID, out var handler))
@@ -198,14 +100,14 @@ namespace Npgsql.TypeHandlers
                 var property = member as PropertyInfo;
                 if (property != null)
                 {
-                    _members.Add(new MemberDescriptor(rawField.PgName, rawField.TypeOID, handler, property));
+                    Members.Add(new MemberDescriptor(rawField.PgName, rawField.TypeOID, handler, property));
                     continue;
                 }
 
                 var field = member as FieldInfo;
                 if (field != null)
                 {
-                    _members.Add(new MemberDescriptor(rawField.PgName, rawField.TypeOID, handler, field));
+                    Members.Add(new MemberDescriptor(rawField.PgName, rawField.TypeOID, handler, field));
                     continue;
                 }
 
@@ -213,7 +115,7 @@ namespace Npgsql.TypeHandlers
             }
         }
 
-        struct MemberDescriptor
+        protected struct MemberDescriptor
         {
             // ReSharper disable once NotAccessedField.Local
             // ReSharper disable once MemberCanBePrivate.Local
@@ -266,6 +168,113 @@ namespace Npgsql.TypeHandlers
         #endregion
     }
 
+    /// <summary>
+    /// Type handler for PostgreSQL composite types
+    /// </summary>
+    /// <remarks>
+    /// http://www.postgresql.org/docs/current/static/rowtypes.html
+    ///
+    /// Encoding:
+    /// A 32-bit integer with the number of columns, then for each column:
+    /// * An OID indicating the type of the column
+    /// * The length of the column(32-bit integer), or -1 if null
+    /// * The column data encoded as binary
+    /// </remarks>
+    /// <typeparam name="T">the CLR type to map to the PostgreSQL composite type </typeparam>
+    class CompositeHandler<T> : CompositeHandlerBase<T> where T : new()
+    {
+        internal CompositeHandler(INpgsqlNameTranslator nameTranslator, NpgsqlConnection conn)
+            : base(nameTranslator, conn)
+        {}
+
+        #region Read
+
+        public override async ValueTask<T> Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription = null)
+        {
+            ResolveFieldsIfNeeded();
+            Debug.Assert(Members != null);
+
+            await buf.Ensure(4, async);
+            var fieldCount = buf.ReadInt32();
+            if (fieldCount != Members.Count)
+            {
+                // PostgreSQL sanity check
+                throw new Exception($"pg_attributes contains {Members.Count} rows for type {PgDisplayName}, but {fieldCount} fields were received!");
+            }
+
+            // If T is a struct, we have to box it here to properly set its fields below
+            object result = new T();
+
+            foreach (var fieldDescriptor in Members)
+            {
+                await buf.Ensure(8, async);
+                buf.ReadInt32();  // read typeOID, not used
+                var fieldLen = buf.ReadInt32();
+                if (fieldLen == -1)
+                {
+                    // Null field, simply skip it and leave at default
+                    continue;
+                }
+                fieldDescriptor.SetValue(result, await fieldDescriptor.Handler.ReadAsObject(buf, fieldLen, async));
+            }
+            return (T)result;
+        }
+
+        #endregion
+
+        #region Write
+
+        protected internal override int ValidateAndGetLength(object value, ref NpgsqlLengthCache lengthCache, NpgsqlParameter parameter = null)
+        {
+            ResolveFieldsIfNeeded();
+            Debug.Assert(Members != null);
+
+            if (lengthCache == null)
+                lengthCache = new NpgsqlLengthCache(1);
+            if (lengthCache.IsPopulated)
+                return lengthCache.Get();
+
+            // Leave empty slot for the entire composite type, and go ahead an populate the element slots
+            var pos = lengthCache.Position;
+            lengthCache.Set(0);
+            var totalLen = 4;  // number of fields
+            foreach (var f in Members)
+            {
+                totalLen += 4 + 4;  // type oid + field length
+                var fieldValue = f.GetValue(value);
+                if (fieldValue == null)
+                    continue;
+                totalLen += f.Handler.ValidateAndGetLength(fieldValue, ref lengthCache);
+            }
+            return lengthCache.Lengths[pos] = totalLen;
+        }
+
+        protected override async Task Write(object value, NpgsqlWriteBuffer buf, NpgsqlLengthCache lengthCache, NpgsqlParameter parameter, bool async)
+        {
+            Debug.Assert(Members != null);
+
+            var composite = (T)value;
+
+            if (buf.WriteSpaceLeft < 4)
+                await buf.Flush(async);
+            buf.WriteInt32(Members.Count);
+
+            foreach (var fieldDescriptor in Members)
+            {
+                var fieldHandler = fieldDescriptor.Handler;
+                var fieldValue = fieldDescriptor.GetValue(composite);
+
+                if (buf.WriteSpaceLeft < 4)
+                    await buf.Flush(async);
+
+                buf.WriteUInt32(fieldDescriptor.OID);
+                await fieldHandler.WriteWithLength(fieldValue, buf, lengthCache, null, async);
+            }
+        }
+
+        #endregion
+    }
+
 #pragma warning disable CA1040    // Avoid empty interfaces
     interface ICompositeTypeHandlerFactory { }
 #pragma warning restore CA1040    // Avoid empty interfaces
@@ -281,7 +290,6 @@ namespace Npgsql.TypeHandlers
         }
 
         protected override NpgsqlTypeHandler<T> Create(NpgsqlConnection conn)
-            => new CompositeHandler<T>(_nameTranslator, conn.Connector.TypeMapper);
-
+            => new CompositeHandler<T>(_nameTranslator, conn);
     }
 }
